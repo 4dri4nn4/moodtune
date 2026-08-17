@@ -34,13 +34,13 @@ export default function Home() {
         </p>
 
         <div className="journey-grid">
-          <Link href="/results?journey=current" className="journey-card">
+          <Link href="/browse" className="journey-card">
             <span className="journey-label">Current mood</span>
             <strong>I feel...</strong>
             <span>Choose music that reflects your emotions.</span>
           </Link>
 
-          <Link href="/results?journey=desired" className="journey-card">
+          <Link href="/browse" className="journey-card">
             <span className="journey-label">Desired mood</span>
             <strong>I want to feel...</strong>
             <span>Choose music that helps guide your mood.</span>

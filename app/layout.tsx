@@ -1,5 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { ReactNode } from "react";
+
+import {
+  Geist,
+  Geist_Mono,
+} from "next/font/google";
+
+import PlayerProvider from "@/components/player/PlayerProvider";
+import MiniPlayer from "@/components/player/MiniPlayer";
+import GlobalHomeButton from "@/components/navigation/GlobalHomeButton";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,18 +22,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "MoodTune",
-  description: "Emotion-aware music streaming platform. Every emotion has a soundtrack.",
+  description:
+    "Emotion-aware music streaming platform. Every emotion has a soundtrack.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+type RootLayoutProps = {
+  children: ReactNode;
+};
+
+export default function RootLayout({
+  children,
+}: RootLayoutProps) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <PlayerProvider>
+          <GlobalHomeButton />
+
+          {children}
+
+          <MiniPlayer />
+        </PlayerProvider>
+      </body>
     </html>
   );
 }

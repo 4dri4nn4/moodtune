@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmotionSelector from "@/components/emotion/EmotionSelector";
 import MoodTuneLogo from "@/components/ui/MoodTuneLogo";
@@ -11,12 +12,15 @@ export default function BrowsePage() {
   const [journeyType, setJourneyType] =
     useState<"feel" | "want">("feel");
 
-  const [selectedEmotion, setSelectedEmotion] =
-    useState("");
+  const [selectedEmotion, setSelectedEmotion] = useState("");
 
   return (
     <main className="emotion-page">
-      <div className="auth-brand">
+      <Link
+        href="/"
+        className="auth-brand browse-brand-link"
+        aria-label="Go to MoodTune home"
+      >
         <MoodTuneLogo size={62} />
 
         <div className="auth-brand-name">
@@ -24,9 +28,10 @@ export default function BrowsePage() {
         </div>
 
         <p>Every emotion has a soundtrack.</p>
-      </div>
+      </Link>
 
       <section className="emotion-panel">
+
         <div className="emotion-heading">
           <p className="eyebrow auth-eyebrow">
             FIND YOUR SOUND

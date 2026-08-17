@@ -1288,11 +1288,6 @@ a {
     inset 0 0 40px rgba(103, 42, 145, 0.05);
 }
 
-.player-artist {
-  color: var(--text-secondary);
-  font-size: 1.05rem;
-}
-
 .player-card {
   display: grid;
   gap: 22px;
@@ -1373,7 +1368,7 @@ a {
   text-transform: capitalize;
 }
 
-.player-controls-placeholder {
+.player-controls {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1381,7 +1376,7 @@ a {
   gap: 18px;
 }
 
-.player-controls-placeholder button {
+.player-controls button {
   width: 48px;
   height: 48px;
 
@@ -1394,7 +1389,7 @@ a {
   font-size: 1.1rem;
 }
 
-.player-controls-placeholder .player-main-button {
+.player-controls .player-main-button {
   width: 62px;
   height: 62px;
 
@@ -1404,15 +1399,6 @@ a {
       #7627c7,
       #ed38bb
     );
-}
-
-.player-status {
-  margin: 0;
-
-  color: var(--text-secondary);
-
-  text-align: center;
-  font-size: 0.82rem;
 }
 
 @media (max-width: 640px) {
@@ -1453,11 +1439,11 @@ a {
   font-size: 0.75rem;
 }
 
-.player-controls-placeholder button {
+.player-controls button {
   cursor: pointer;
 }
 
-.player-controls-placeholder button:disabled {
+.player-controls button:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -1466,3 +1452,442 @@ a {
   transform: scale(1.06);
 }
 
+.browse-brand-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.browse-brand-link:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 5px;
+  border-radius: 6px;
+}
+
+.results-emotion {
+  color: #d85cff;
+  text-transform: capitalize;
+}
+
+/* =====================================================
+   GLOBAL HOME NAVIGATION
+   ===================================================== */
+
+.global-home-button {
+  position: fixed;
+  z-index: 1000;
+
+  top: 22px;
+  left: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  min-height: 42px;
+  padding: 0 16px;
+
+  border: 1px solid rgba(210, 83, 255, 0.45);
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(27, 16, 38, 0.92),
+      rgba(7, 6, 14, 0.94)
+    );
+
+  color: #d7c9e8;
+
+  font-size: 0.82rem;
+  font-weight: 700;
+
+  backdrop-filter: blur(16px);
+
+  box-shadow:
+    0 0 18px rgba(157, 69, 255, 0.14);
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.global-home-button:hover {
+  color: #ffffff;
+  border-color: rgba(255, 103, 220, 0.75);
+  transform: translateX(-3px);
+}
+
+.global-home-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+
+/* =====================================================
+   RESULTS TRACK COVERS
+   ===================================================== */
+
+.result-track-main {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.result-cover,
+.result-cover-placeholder {
+  flex-shrink: 0;
+
+  width: 76px;
+  height: 76px;
+
+  border-radius: 14px;
+
+  object-fit: cover;
+}
+
+.result-cover-placeholder {
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(225, 82, 255, 0.45);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(71, 29, 110, 0.95),
+      rgba(13, 7, 22, 0.96)
+    );
+
+  color: #ffffff;
+  font-size: 1.8rem;
+}
+
+.result-track-details {
+  min-width: 0;
+}
+
+.result-track-details h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-play-button {
+  border: 0;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.result-play-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.result-play-button:focus-visible {
+  outline: 2px solid #ff8de3;
+  outline-offset: 4px;
+}
+
+.results-error {
+  color: #ff72c8;
+}
+
+
+/* =====================================================
+   FULL PLAYER ACTIONS
+   ===================================================== */
+
+.player-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-bottom: 12px;
+}
+
+.player-minimize-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 12px;
+
+  border: 1px solid rgba(155, 86, 203, 0.42);
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.025);
+  color: #d7c9e8;
+
+  font-size: 0.76rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.player-minimize-button:hover {
+  color: #ffffff;
+  border-color: rgba(255, 103, 220, 0.72);
+  background: rgba(241, 91, 209, 0.08);
+}
+
+.player-minimize-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+.player-queue-position {
+  margin-top: 14px !important;
+
+  color: #a99db7 !important;
+
+  font-size: 0.75rem;
+}
+
+
+/* =====================================================
+   PERSISTENT MINI-PLAYER
+   ===================================================== */
+
+.mini-player {
+  position: fixed;
+  z-index: 1200;
+
+  right: 24px;
+  bottom: 24px;
+
+  width: min(520px, calc(100% - 48px));
+  min-height: 86px;
+  padding: 12px 14px;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+
+  border: 1px solid rgba(225, 82, 255, 0.55);
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(31, 18, 43, 0.97),
+      rgba(7, 6, 14, 0.98)
+    );
+
+  backdrop-filter: blur(20px);
+
+  box-shadow:
+    0 14px 42px rgba(0, 0, 0, 0.48),
+    0 0 28px rgba(157, 69, 255, 0.2);
+}
+
+.mini-player-track {
+  min-width: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  border: 0;
+
+  background: transparent;
+  color: inherit;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+.mini-player-cover,
+.mini-player-cover-placeholder {
+  flex-shrink: 0;
+
+  width: 58px;
+  height: 58px;
+
+  border-radius: 12px;
+
+  object-fit: cover;
+}
+
+.mini-player-cover-placeholder {
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(225, 82, 255, 0.45);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(71, 29, 110, 0.95),
+      rgba(13, 7, 22, 0.96)
+    );
+
+  color: #ffffff;
+  font-size: 1.5rem;
+}
+
+.mini-player-details {
+  min-width: 0;
+
+  display: grid;
+  gap: 4px;
+}
+
+.mini-player-details strong,
+.mini-player-details span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-player-details strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.mini-player-details span {
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+}
+
+.mini-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-player-controls button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(221, 83, 255, 0.36);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.035);
+  color: #ffffff;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.mini-player-controls button:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: rgba(255, 103, 220, 0.75);
+}
+
+.mini-player-controls button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mini-player-controls .mini-player-main-button {
+  width: 44px;
+  height: 44px;
+
+  border-color: transparent;
+
+  background:
+    linear-gradient(
+      110deg,
+      #7627c7,
+      #ed38bb
+    );
+}
+
+.mini-player-expand-button {
+  color: #d9b9f0 !important;
+}
+
+.mini-player-controls button:focus-visible,
+.mini-player-track:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+
+/* =====================================================
+   PLAYER RESPONSIVE DESIGN
+   ===================================================== */
+
+@media (max-width: 700px) {
+  .global-home-button {
+    top: 12px;
+    left: 12px;
+
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+
+  .result-track-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .result-play-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .mini-player {
+    right: 12px;
+    bottom: 12px;
+
+    width: calc(100% - 24px);
+
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .mini-player-controls {
+    justify-content: center;
+  }
+
+  .mini-player-expand-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .mini-player-track {
+    padding-right: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .global-home-button span:last-child {
+    display: none;
+  }
+
+  .global-home-button {
+    width: 40px;
+    padding: 0;
+
+    justify-content: center;
+  }
+
+  .result-cover,
+  .result-cover-placeholder {
+    width: 64px;
+    height: 64px;
+  }
+}
