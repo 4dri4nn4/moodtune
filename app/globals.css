@@ -2327,3 +2327,146 @@ a {
   }
 }
 
+/* =====================================================
+   LIBRARY TABS AND LISTENING HISTORY
+   ===================================================== */
+
+.library-tabs {
+  margin: 28px 0 10px;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  padding: 6px;
+
+  border: 1px solid rgba(216, 92, 255, 0.25);
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.library-tab {
+  min-height: 52px;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  border: 1px solid transparent;
+  border-radius: 13px;
+
+  background: transparent;
+  color: var(--text-secondary);
+
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.library-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.library-tab.active {
+  border-color: rgba(255, 92, 207, 0.5);
+
+  background:
+    linear-gradient(
+      110deg,
+      rgba(118, 39, 199, 0.28),
+      rgba(237, 56, 187, 0.16)
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 0 18px rgba(190, 61, 222, 0.12);
+}
+
+.library-tab-count {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+
+  display: inline-grid;
+  place-items: center;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: #ff80d2;
+
+  font-size: 0.72rem;
+}
+
+.library-tab:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+.history-remove-button {
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(216, 92, 255, 0.38);
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.025);
+  color: #d9b9f0;
+
+  font: inherit;
+  font-size: 1.25rem;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.history-remove-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  border-color: rgba(255, 92, 207, 0.72);
+  background: rgba(255, 72, 170, 0.1);
+  color: #ff80d2;
+}
+
+.history-remove-button:disabled {
+  width: auto;
+  opacity: 0.55;
+  cursor: wait;
+  font-size: 0.72rem;
+}
+
+.history-remove-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+@media (max-width: 600px) {
+  .library-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .library-tab {
+    justify-content: flex-start;
+  }
+}
+
