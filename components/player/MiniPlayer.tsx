@@ -1,8 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { usePlayer } from "./PlayerProvider";
+import { useRouter } from "next/navigation";
+
+import useFavourite from "@/components/favourites/useFavourite";
+import { usePlayer } from "@/components/player/PlayerProvider";
 
 export default function MiniPlayer() {
   const router = useRouter();
@@ -19,6 +21,12 @@ export default function MiniPlayer() {
     playNext,
     expandPlayer,
   } = usePlayer();
+
+  const {
+    isFavourite,
+    updatingFavourite,
+    toggleFavourite,
+  } = useFavourite(currentTrack);
 
   if (!currentTrack || !isMinimized) {
     return null;
@@ -72,12 +80,45 @@ export default function MiniPlayer() {
         )}
 
         <span className="mini-player-details">
-          <strong>{track.title}</strong>
-          <span>{track.artist}</span>
+          <strong>
+            {track.title}
+          </strong>
+
+          <span>
+            {track.artist}
+          </span>
         </span>
       </button>
 
       <div className="mini-player-controls">
+        <button
+          type="button"
+          className={
+            isFavourite
+              ? "mini-player-favourite-button favourite-active"
+              : "mini-player-favourite-button"
+          }
+          onClick={toggleFavourite}
+          disabled={updatingFavourite}
+          aria-label={
+            isFavourite
+              ? `Remove ${track.title} from favourites`
+              : `Add ${track.title} to favourites`
+          }
+          aria-pressed={isFavourite}
+          title={
+            isFavourite
+              ? "Remove from favourites"
+              : "Add to favourites"
+          }
+        >
+          {updatingFavourite
+            ? "…"
+            : isFavourite
+              ? "♥"
+              : "♡"}
+        </button>
+
         <button
           type="button"
           onClick={playPrevious}

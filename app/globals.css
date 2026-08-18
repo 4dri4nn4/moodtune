@@ -2231,3 +2231,99 @@ a {
   }
 }
 
+/* MiniPlayer favourite control */
+
+.mini-player-controls .mini-player-favourite-button {
+  color: #ff69c7;
+  font-size: 1.15rem;
+}
+
+.mini-player-controls .mini-player-favourite-button.favourite-active {
+  border-color: #ff69c7;
+  background: rgba(255, 72, 170, 0.16);
+
+  box-shadow:
+    0 0 14px rgba(255, 72, 170, 0.18);
+}
+
+/* Full Player favourite control */
+
+.player-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.player-favourite-button {
+  min-height: 46px;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  border: 1px solid rgba(255, 92, 189, 0.45);
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.025);
+  color: #ff69c7;
+
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.player-favourite-button span:first-child {
+  font-size: 1.2rem;
+}
+
+.player-favourite-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #ff69c7;
+  background: rgba(255, 72, 170, 0.12);
+}
+
+.player-favourite-button.favourite-active {
+  border-color: #ff69c7;
+  background: rgba(255, 72, 170, 0.17);
+
+  box-shadow:
+    0 0 18px rgba(255, 72, 170, 0.18);
+}
+
+.player-favourite-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.player-favourite-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+.player-favourite-error {
+  margin: 12px 0;
+}
+
+@media (max-width: 600px) {
+  .player-panel-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .player-favourite-button,
+  .player-minimize-button {
+    width: 100%;
+  }
+}
+
