@@ -49,9 +49,9 @@ export default function Home() {
   }
 
   const listenerName: string =
-  user?.displayName ||
-  user?.email ||
-  "Listener";
+    user?.displayName ||
+    user?.email ||
+    "Listener";
 
   return (
     <main className="home-page">
@@ -69,7 +69,7 @@ export default function Home() {
           aria-label="Main navigation"
         >
           <Link
-            href="/browse"
+            href="/browse?journey=feel"
             className="nav-link"
           >
             Browse
@@ -168,14 +168,16 @@ export default function Home() {
 
         <div className="journey-grid">
           <Link
-            href="/browse"
+            href="/browse?journey=feel"
             className="journey-card"
           >
             <span className="journey-label">
               Current mood
             </span>
 
-            <strong>I feel...</strong>
+            <strong>
+              I feel...
+            </strong>
 
             <span>
               Choose music that reflects your emotions.
@@ -183,14 +185,16 @@ export default function Home() {
           </Link>
 
           <Link
-            href="/browse"
+            href="/browse?journey=want"
             className="journey-card"
           >
             <span className="journey-label">
               Desired mood
             </span>
 
-            <strong>I want to feel...</strong>
+            <strong>
+              I want to feel...
+            </strong>
 
             <span>
               Choose music that helps guide your mood.
@@ -200,7 +204,7 @@ export default function Home() {
 
         <div className="hero-actions">
           <Link
-            href="/browse"
+            href="/browse?journey=feel"
             className="button"
           >
             Browse music
@@ -240,7 +244,7 @@ export default function Home() {
 
         <div className="feature-grid">
           <Link
-            href="/browse"
+            href="/browse?journey=feel"
             className="feature-card feature-card-link"
           >
             <h3>
