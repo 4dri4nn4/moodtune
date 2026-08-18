@@ -1891,3 +1891,233 @@ a {
     height: 64px;
   }
 }
+
+
+.feature-card-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.feature-card-link:hover {
+  transform: translateY(-4px);
+  border-color: rgba(216, 92, 255, 0.7);
+  box-shadow: 0 18px 40px rgba(165, 53, 220, 0.15);
+}
+
+.feature-card-link:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+.feature-card-action {
+  display: inline-block;
+  margin-top: 18px;
+  color: #d85cff;
+  font-weight: 700;
+}
+
+/* =====================================================
+   LIBRARY
+   ===================================================== */
+
+.library-panel {
+  width: min(920px, calc(100% - 32px));
+}
+
+.library-message {
+  max-width: 520px;
+  margin: 34px auto 10px;
+  padding: 34px 26px;
+
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 14px;
+
+  border: 1px solid rgba(216, 92, 255, 0.28);
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.025);
+  text-align: center;
+}
+
+.library-message-icon {
+  width: 58px;
+  height: 58px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 85, 199, 0.48);
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(118, 39, 199, 0.38),
+      rgba(237, 56, 187, 0.18)
+    );
+
+  color: #ff69cb;
+  font-size: 2rem;
+}
+
+.library-message h2,
+.library-message p {
+  margin: 0;
+}
+
+.library-message p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.library-count {
+  margin: 24px 0 14px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.library-track-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.library-remove-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 92, 189, 0.45);
+  border-radius: 50%;
+
+  background: rgba(255, 72, 170, 0.09);
+  color: #ff69c7;
+
+  font-size: 1.1rem;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.library-remove-button:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: #ff69c7;
+  background: rgba(255, 72, 170, 0.17);
+}
+
+.library-remove-button:disabled {
+  width: auto;
+  padding-inline: 12px;
+
+  border-radius: 999px;
+  opacity: 0.55;
+  cursor: wait;
+
+  font-size: 0.72rem;
+}
+
+.library-remove-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+@media (max-width: 700px) {
+  .library-track-actions {
+    width: 100%;
+  }
+
+  .library-track-actions .result-play-button {
+    flex: 1;
+  }
+
+  .library-message {
+    padding: 28px 20px;
+  }
+}
+
+/* =====================================================
+   FAVOURITE CONTROLS
+   ===================================================== */
+
+.result-track-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.favourite-button {
+  flex-shrink: 0;
+
+  width: 44px;
+  height: 44px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 92, 189, 0.42);
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.025);
+  color: #ff69c7;
+
+  font-size: 1.35rem;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.favourite-button:hover:not(:disabled) {
+  transform: scale(1.07);
+
+  border-color: #ff69c7;
+  background: rgba(255, 72, 170, 0.14);
+}
+
+.favourite-button-active {
+  border-color: #ff69c7;
+  background: rgba(255, 72, 170, 0.18);
+
+  box-shadow:
+    0 0 18px rgba(255, 72, 170, 0.2);
+}
+
+.favourite-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.favourite-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 4px;
+}
+
+@media (max-width: 700px) {
+  .result-track-actions {
+    width: 100%;
+  }
+
+  .result-track-actions .result-play-button {
+    flex: 1;
+  }
+}
