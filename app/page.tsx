@@ -1,40 +1,169 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  onAuthStateChanged,
+  signOut,
+  type User,
+} from "firebase/auth";
+
+import { auth } from "@/lib/firebase";
 
 export default function Home() {
+  const router = useRouter();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+
+  useEffect(() => {
+    return onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        setUser(currentUser);
+        setAuthReady(true);
+      }
+    );
+  }, []);
+
+  async function handleSignOut() {
+    try {
+      setSigningOut(true);
+      setSignOutError("");
+
+      await signOut(auth);
+
+      router.refresh();
+    } catch (error) {
+      console.error("Sign out error:", error);
+
+      setSignOutError(
+        "We couldn't sign you out. Please try again."
+      );
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  const listenerName: string =
+  user?.displayName ||
+  user?.email ||
+  "Listener";
+
   return (
     <main className="home-page">
       <header className="topbar">
-        <Link href="/" className="brand" aria-label="MoodTune home">
+        <Link
+          href="/"
+          className="brand"
+          aria-label="MoodTune home"
+        >
           MoodTune
         </Link>
 
-        <nav className="topbar-actions" aria-label="Main navigation">
-          <Link href="/browse" className="nav-link">
+        <nav
+          className="topbar-actions"
+          aria-label="Main navigation"
+        >
+          <Link
+            href="/browse"
+            className="nav-link"
+          >
             Browse
           </Link>
 
-          <Link href="/library" className="nav-link">
+          <Link
+            href="/library"
+            className="nav-link"
+          >
             Library
           </Link>
 
-          <Link href="/login" className="nav-link">
-            Sign in
-          </Link>
+          {authReady && user && (
+            <>
+              <span
+                className="nav-listener"
+                title={
+                  user.email ||
+                  "Signed-in MoodTune account"
+                }
+              >
+                Hi, {listenerName}
+              </span>
 
-          <Link href="/register" className="button button-small">
-            Create account
-          </Link>
+              <Link
+                href="/profile"
+                className="nav-link"
+              >
+                Profile
+              </Link>
+
+              <button
+                type="button"
+                className="nav-signout-button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+              >
+                {signingOut
+                  ? "Signing out..."
+                  : "Sign out"}
+              </button>
+            </>
+          )}
+
+          {authReady && !user && (
+            <>
+              <Link
+                href="/login"
+                className="nav-link"
+              >
+                Sign in
+              </Link>
+
+              <Link
+                href="/register"
+                className="button button-small"
+              >
+                Create account
+              </Link>
+            </>
+          )}
+
+          {!authReady && (
+            <span
+              className="nav-auth-loading"
+              aria-label="Checking account"
+            >
+              •••
+            </span>
+          )}
         </nav>
       </header>
 
-      <section className="hero">
-        <p className="eyebrow">Emotion-aware music streaming</p>
+      {signOutError && (
+        <p
+          className="home-auth-error"
+          role="alert"
+        >
+          {signOutError}
+        </p>
+      )}
 
-        <h1>Every emotion has a soundtrack.</h1>
+      <section className="hero">
+        <p className="eyebrow">
+          Emotion-aware music streaming
+        </p>
+
+        <h1>
+          Every emotion has a soundtrack.
+        </h1>
 
         <p className="hero-description">
-          Discover and play music based on how you feel now, or how you want
-          to feel next.
+          Discover and play music based on how you feel
+          now, or how you want to feel next.
         </p>
 
         <div className="journey-grid">
@@ -70,13 +199,28 @@ export default function Home() {
         </div>
 
         <div className="hero-actions">
-          <Link href="/browse" className="button">
+          <Link
+            href="/browse"
+            className="button"
+          >
             Browse music
           </Link>
 
-          <Link href="/register" className="text-link">
-            Start your MoodTune journey
-          </Link>
+          {authReady && user ? (
+            <Link
+              href="/library"
+              className="text-link"
+            >
+              Open your saved music
+            </Link>
+          ) : (
+            <Link
+              href="/register"
+              className="text-link"
+            >
+              Start your MoodTune journey
+            </Link>
+          )}
         </div>
       </section>
 
@@ -99,11 +243,13 @@ export default function Home() {
             href="/browse"
             className="feature-card feature-card-link"
           >
-            <h3>Emotion selection</h3>
+            <h3>
+              Emotion selection
+            </h3>
 
             <p>
-              Select your current or desired mood and discover
-              matching music.
+              Select your current or desired mood and
+              discover matching music.
             </p>
 
             <span className="feature-card-action">
@@ -115,11 +261,13 @@ export default function Home() {
             href="/library"
             className="feature-card feature-card-link"
           >
-            <h3>Your own library</h3>
+            <h3>
+              Your own library
+            </h3>
 
             <p>
-              Save favourites, manage playlists and revisit
-              listening history.
+              Save favourites, manage playlists and
+              revisit listening history.
             </p>
 
             <span className="feature-card-action">
@@ -128,11 +276,13 @@ export default function Home() {
           </Link>
 
           <article className="feature-card">
-            <h3>Built-in playback</h3>
+            <h3>
+              Built-in playback
+            </h3>
 
             <p>
-              Listen directly inside MoodTune using the integrated
-              music player.
+              Listen directly inside MoodTune using
+              the integrated music player.
             </p>
           </article>
         </div>
