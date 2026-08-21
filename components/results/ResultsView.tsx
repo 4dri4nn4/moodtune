@@ -12,22 +12,21 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
+  query,
   serverTimestamp,
   setDoc,
-} from "firebase/firestore";
-import {
-  getDocs,
-  query,
   where,
 } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
-import MoodTuneLogo from "@/components/ui/MoodTuneLogo";
+import AddToPlaylistButton from "@/components/playlists/AddToPlaylistButton";
 import {
   usePlayer,
   type Track,
 } from "@/components/player/PlayerProvider";
+import MoodTuneLogo from "@/components/ui/MoodTuneLogo";
 
 type ResultsViewProps = {
   journey: string;
@@ -41,27 +40,42 @@ export default function ResultsView({
   const router = useRouter();
   const { loadQueue } = usePlayer();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [favouriteIds, setFavouriteIds] = useState<Set<string>>(
-    new Set()
-  );
+  const [user, setUser] =
+    useState<User | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [savingTrackId, setSavingTrackId] = useState("");
-  const [error, setError] = useState("");
-  const [favouriteError, setFavouriteError] = useState("");
+  const [tracks, setTracks] =
+    useState<Track[]>([]);
+
+  const [favouriteIds, setFavouriteIds] =
+    useState<Set<string>>(
+      new Set()
+    );
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [savingTrackId, setSavingTrackId] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [
+    favouriteError,
+    setFavouriteError,
+  ] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    return onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        setUser(currentUser);
 
-      if (!currentUser) {
-        setFavouriteIds(new Set());
+        if (!currentUser) {
+          setFavouriteIds(new Set());
+        }
       }
-    });
-
-    return unsubscribe;
+    );
   }, []);
 
   useEffect(() => {
@@ -70,7 +84,10 @@ export default function ResultsView({
     async function loadTracks() {
       if (!emotion) {
         if (active) {
-          setError("No emotion was selected.");
+          setError(
+            "No emotion was selected."
+          );
+
           setLoading(false);
         }
 
@@ -90,24 +107,32 @@ export default function ResultsView({
           )
         );
 
-        const snapshot = await getDocs(tracksQuery);
+        const snapshot =
+          await getDocs(tracksQuery);
 
         if (!active) {
           return;
         }
 
-        const matchingTracks = snapshot.docs.map(
-          (trackDocument) => ({
-            id: trackDocument.id,
-            ...(
-              trackDocument.data() as Omit<Track, "id">
-            ),
-          })
-        );
+        const matchingTracks =
+          snapshot.docs.map(
+            (trackDocument) => ({
+              id: trackDocument.id,
+              ...(
+                trackDocument.data() as Omit<
+                  Track,
+                  "id"
+                >
+              ),
+            })
+          );
 
         setTracks(matchingTracks);
       } catch (trackError) {
-        console.error("Track query error:", trackError);
+        console.error(
+          "Track query error:",
+          trackError
+        );
 
         if (active) {
           setError(
@@ -121,7 +146,7 @@ export default function ResultsView({
       }
     }
 
-    loadTracks();
+    void loadTracks();
 
     return () => {
       active = false;
@@ -133,28 +158,32 @@ export default function ResultsView({
       return;
     }
 
-    const favouritesReference = collection(
-      db,
-      "users",
-      user.uid,
-      "favourites"
-    );
+    const favouritesReference =
+      collection(
+        db,
+        "users",
+        user.uid,
+        "favourites"
+      );
 
-    const unsubscribe = onSnapshot(
+    return onSnapshot(
       favouritesReference,
       (snapshot) => {
         setFavouriteIds(
           new Set(
             snapshot.docs.map(
-              (favouriteDocument) => favouriteDocument.id
+              (favouriteDocument) =>
+                favouriteDocument.id
             )
           )
         );
+
+        setFavouriteError("");
       },
-      (favouritesError) => {
+      (snapshotError) => {
         console.error(
           "Favourite listener error:",
-          favouritesError
+          snapshotError
         );
 
         setFavouriteError(
@@ -162,26 +191,35 @@ export default function ResultsView({
         );
       }
     );
-
-    return unsubscribe;
   }, [user]);
 
-  function handlePlayTrack(track: Track) {
-    loadQueue(tracks, track.id, {
-      journey,
-      emotion,
-    });
+  function handlePlayTrack(
+    track: Track
+  ) {
+    loadQueue(
+      tracks,
+      track.id,
+      {
+        journey,
+        emotion,
+      }
+    );
 
-    const parameters = new URLSearchParams({
-      track: track.id,
-      journey,
-      emotion,
-    });
+    const parameters =
+      new URLSearchParams({
+        track: track.id,
+        journey,
+        emotion,
+      });
 
-    router.push(`/player?${parameters.toString()}`);
+    router.push(
+      `/player?${parameters.toString()}`
+    );
   }
 
-  async function handleToggleFavourite(track: Track) {
+  async function handleToggleFavourite(
+    track: Track
+  ) {
     if (!user) {
       router.push("/login");
       return;
@@ -203,22 +241,34 @@ export default function ResultsView({
       setSavingTrackId(track.id);
       setFavouriteError("");
 
-      if (favouriteIds.has(track.id)) {
-        await deleteDoc(favouriteReference);
+      if (
+        favouriteIds.has(track.id)
+      ) {
+        await deleteDoc(
+          favouriteReference
+        );
       } else {
-        await setDoc(favouriteReference, {
-          title: track.title,
-          artist: track.artist,
-          genre: track.genre,
-          audioURL: track.audioURL,
-          coverURL: track.coverURL,
-          duration: track.duration,
-          emotionTags: track.emotionTags,
-          savedAt: serverTimestamp(),
-        });
+        await setDoc(
+          favouriteReference,
+          {
+            title: track.title,
+            artist: track.artist,
+            genre: track.genre,
+            audioURL: track.audioURL,
+            coverURL: track.coverURL,
+            duration: track.duration,
+            emotionTags:
+              track.emotionTags,
+            savedAt:
+              serverTimestamp(),
+          }
+        );
       }
     } catch (saveError) {
-      console.error("Favourite update error:", saveError);
+      console.error(
+        "Favourite update error:",
+        saveError
+      );
 
       setFavouriteError(
         "We couldn't update your favourites. Please try again."
@@ -237,7 +287,9 @@ export default function ResultsView({
           Mood<span>Tune</span>
         </div>
 
-        <p>Every emotion has a soundtrack.</p>
+        <p>
+          Every emotion has a soundtrack.
+        </p>
       </div>
 
       <section className="emotion-panel">
@@ -250,6 +302,7 @@ export default function ResultsView({
             {journey === "want"
               ? "Music to help you feel"
               : "Music for when you feel"}
+
             <br />
 
             <span className="results-emotion">
@@ -258,8 +311,9 @@ export default function ResultsView({
           </h1>
 
           <p>
-            MoodTune matched your selected emotion with tracks
-            from your personalised music catalogue.
+            MoodTune matched your selected
+            emotion with tracks from your
+            personalised music catalogue.
           </p>
         </div>
 
@@ -270,13 +324,19 @@ export default function ResultsView({
         )}
 
         {error && (
-          <p className="results-error">
+          <p
+            className="results-error"
+            role="alert"
+          >
             {error}
           </p>
         )}
 
         {favouriteError && (
-          <p className="results-error">
+          <p
+            className="results-error"
+            role="alert"
+          >
             {favouriteError}
           </p>
         )}
@@ -285,11 +345,14 @@ export default function ResultsView({
           !error &&
           tracks.length === 0 && (
             <div className="results-empty">
-              <h2>No matching tracks yet</h2>
+              <h2>
+                No matching tracks yet
+              </h2>
 
               <p>
-                We don&apos;t currently have a track tagged
-                with this emotion.
+                We don&apos;t currently
+                have a track tagged with
+                this emotion.
               </p>
             </div>
           )}
@@ -298,87 +361,112 @@ export default function ResultsView({
           !error &&
           tracks.length > 0 && (
             <div className="results-grid">
-              {tracks.map((track) => {
-                const isFavourite = favouriteIds.has(track.id);
-                const isSaving = savingTrackId === track.id;
+              {tracks.map(
+                (track) => {
+                  const isFavourite =
+                    favouriteIds.has(
+                      track.id
+                    );
 
-                return (
-                  <article
-                    key={track.id}
-                    className="result-track-card"
-                  >
-                    <div className="result-track-main">
-                      {track.coverURL === "pending" ? (
-                        <div className="result-cover-placeholder">
-                          ♪
+                  const isSaving =
+                    savingTrackId ===
+                    track.id;
+
+                  return (
+                    <article
+                      key={track.id}
+                      className="result-track-card"
+                    >
+                      <div className="result-track-main">
+                        {track.coverURL ===
+                        "pending" ? (
+                          <div className="result-cover-placeholder">
+                            ♪
+                          </div>
+                        ) : (
+                          <Image
+                            src={
+                              track.coverURL
+                            }
+                            alt={`${track.title} cover`}
+                            width={72}
+                            height={72}
+                            className="result-cover"
+                          />
+                        )}
+
+                        <div className="result-track-details">
+                          <p className="result-genre">
+                            {track.genre}
+                          </p>
+
+                          <h2>
+                            {track.title}
+                          </h2>
+
+                          <p>
+                            {track.artist}
+                          </p>
                         </div>
-                      ) : (
-                        <Image
-                          src={track.coverURL}
-                          alt={`${track.title} cover`}
-                          width={72}
-                          height={72}
-                          className="result-cover"
-                        />
-                      )}
-
-                      <div className="result-track-details">
-                        <p className="result-genre">
-                          {track.genre}
-                        </p>
-
-                        <h2>{track.title}</h2>
-
-                        <p>{track.artist}</p>
                       </div>
-                    </div>
 
-                    <div className="result-track-actions">
-                      <button
-                        type="button"
-                        className={`favourite-button ${
-                          isFavourite
-                            ? "favourite-button-active"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleToggleFavourite(track)
-                        }
-                        disabled={isSaving}
-                        aria-label={
-                          isFavourite
-                            ? `Remove ${track.title} from favourites`
-                            : `Add ${track.title} to favourites`
-                        }
-                        aria-pressed={isFavourite}
-                        title={
-                          user
-                            ? isFavourite
-                              ? "Remove from favourites"
-                              : "Add to favourites"
-                            : "Sign in to save this track"
-                        }
-                      >
-                        {isSaving
-                          ? "…"
-                          : isFavourite
-                            ? "♥"
-                            : "♡"}
-                      </button>
+                      <div className="result-track-actions">
+                        <AddToPlaylistButton
+                          track={track}
+                        />
 
-                      <button
-                        type="button"
-                        className="result-play-button"
-                        onClick={() =>
-                          handlePlayTrack(track)
-                        }
-                      >
-                        Play →
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+                        <button
+                          type="button"
+                          className={`favourite-button ${
+                            isFavourite
+                              ? "favourite-button-active"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            void handleToggleFavourite(
+                              track
+                            );
+                          }}
+                          disabled={isSaving}
+                          aria-label={
+                            isFavourite
+                              ? `Remove ${track.title} from favourites`
+                              : `Add ${track.title} to favourites`
+                          }
+                          aria-pressed={
+                            isFavourite
+                          }
+                          title={
+                            user
+                              ? isFavourite
+                                ? "Remove from favourites"
+                                : "Add to favourites"
+                              : "Sign in to save this track"
+                          }
+                        >
+                          {isSaving
+                            ? "…"
+                            : isFavourite
+                              ? "♥"
+                              : "♡"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="result-play-button"
+                          onClick={() =>
+                            handlePlayTrack(
+                              track
+                            )
+                          }
+                        >
+                          Play →
+                        </button>
+                      </div>
+                    </article>
+                  );
+                }
+              )}
             </div>
           )}
 

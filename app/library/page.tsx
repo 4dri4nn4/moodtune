@@ -12,10 +12,13 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   type DocumentData,
+  updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase";
@@ -27,7 +30,15 @@ import {
 
 type LibraryTab =
   | "favourites"
-  | "history";
+  | "history"
+  | "playlists";
+
+type Playlist = {
+  id: string;
+  name: string;
+  tracks: Track[];
+  tracksLoading: boolean;
+};
 
 function createTrack(
   id: string,
@@ -39,11 +50,9 @@ function createTrack(
     artist: data.artist ?? "",
     genre: data.genre ?? "",
     audioURL: data.audioURL ?? "",
-    coverURL:
-      data.coverURL ?? "pending",
+    coverURL: data.coverURL ?? "pending",
     duration: data.duration ?? 0,
-    emotionTags:
-      data.emotionTags ?? [],
+    emotionTags: data.emotionTags ?? [],
   };
 }
 
@@ -63,6 +72,14 @@ export default function LibraryPage() {
   const [history, setHistory] =
     useState<Track[]>([]);
 
+  const [playlists, setPlaylists] =
+    useState<Playlist[]>([]);
+
+  const [
+    selectedPlaylistId,
+    setSelectedPlaylistId,
+  ] = useState<string | null>(null);
+
   const [authLoading, setAuthLoading] =
     useState(true);
 
@@ -77,9 +94,34 @@ export default function LibraryPage() {
   ] = useState(false);
 
   const [
+    playlistsLoading,
+    setPlaylistsLoading,
+  ] = useState(false);
+
+  const [
     removingTrackId,
     setRemovingTrackId,
   ] = useState("");
+
+  const [
+    deletingPlaylistId,
+    setDeletingPlaylistId,
+  ] = useState("");
+
+  const [
+    editingPlaylistId,
+    setEditingPlaylistId,
+  ] = useState("");
+
+  const [
+    editedPlaylistName,
+    setEditedPlaylistName,
+  ] = useState("");
+
+  const [
+    savingPlaylistName,
+    setSavingPlaylistName,
+  ] = useState(false);
 
   const [
     favouritesError,
@@ -91,26 +133,40 @@ export default function LibraryPage() {
     setHistoryError,
   ] = useState("");
 
+  const [
+    playlistsError,
+    setPlaylistsError,
+  ] = useState("");
+
   useEffect(() => {
-    return onAuthStateChanged(
+    const unsubscribe = onAuthStateChanged(
       auth,
       (currentUser) => {
         setUser(currentUser);
         setAuthLoading(false);
+
         setFavouritesError("");
         setHistoryError("");
+        setPlaylistsError("");
 
         if (currentUser) {
           setFavouritesLoading(true);
           setHistoryLoading(true);
+          setPlaylistsLoading(true);
         } else {
           setFavourites([]);
           setHistory([]);
+          setPlaylists([]);
+          setSelectedPlaylistId(null);
+
           setFavouritesLoading(false);
           setHistoryLoading(false);
+          setPlaylistsLoading(false);
         }
       }
     );
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -128,26 +184,25 @@ export default function LibraryPage() {
       orderBy("savedAt", "desc")
     );
 
-    return onSnapshot(
+    const unsubscribe = onSnapshot(
       favouritesQuery,
       (snapshot) => {
-        const savedTracks =
-          snapshot.docs.map(
-            (favouriteDocument) =>
-              createTrack(
-                favouriteDocument.id,
-                favouriteDocument.data()
-              )
-          );
+        const savedTracks = snapshot.docs.map(
+          (favouriteDocument) =>
+            createTrack(
+              favouriteDocument.id,
+              favouriteDocument.data()
+            )
+        );
 
         setFavourites(savedTracks);
         setFavouritesError("");
         setFavouritesLoading(false);
       },
-      (error) => {
+      (snapshotError) => {
         console.error(
           "Favourites loading error:",
-          error
+          snapshotError
         );
 
         setFavouritesError(
@@ -157,6 +212,8 @@ export default function LibraryPage() {
         setFavouritesLoading(false);
       }
     );
+
+    return unsubscribe;
   }, [user]);
 
   useEffect(() => {
@@ -174,26 +231,25 @@ export default function LibraryPage() {
       orderBy("lastPlayedAt", "desc")
     );
 
-    return onSnapshot(
+    const unsubscribe = onSnapshot(
       historyQuery,
       (snapshot) => {
-        const recentTracks =
-          snapshot.docs.map(
-            (historyDocument) =>
-              createTrack(
-                historyDocument.id,
-                historyDocument.data()
-              )
-          );
+        const recentTracks = snapshot.docs.map(
+          (historyDocument) =>
+            createTrack(
+              historyDocument.id,
+              historyDocument.data()
+            )
+        );
 
         setHistory(recentTracks);
         setHistoryError("");
         setHistoryLoading(false);
       },
-      (error) => {
+      (snapshotError) => {
         console.error(
           "History loading error:",
-          error
+          snapshotError
         );
 
         setHistoryError(
@@ -203,26 +259,200 @@ export default function LibraryPage() {
         setHistoryLoading(false);
       }
     );
+
+    return unsubscribe;
   }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let trackUnsubscribes: Array<
+      () => void
+    > = [];
+
+    const playlistsQuery = query(
+      collection(
+        db,
+        "users",
+        user.uid,
+        "playlists"
+      ),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribePlaylists = onSnapshot(
+      playlistsQuery,
+      (snapshot) => {
+        trackUnsubscribes.forEach(
+          (unsubscribe) => unsubscribe()
+        );
+
+        trackUnsubscribes = [];
+
+        const loadedPlaylists: Playlist[] =
+          snapshot.docs.map(
+            (playlistDocument) => ({
+              id: playlistDocument.id,
+              name:
+                typeof playlistDocument.data()
+                  .name === "string"
+                  ? playlistDocument.data().name
+                  : "Untitled playlist",
+              tracks: [],
+              tracksLoading: true,
+            })
+          );
+
+        setPlaylists(loadedPlaylists);
+        setPlaylistsError("");
+        setPlaylistsLoading(false);
+
+        snapshot.docs.forEach(
+          (playlistDocument) => {
+            const playlistTracksQuery = query(
+              collection(
+                db,
+                "users",
+                user.uid,
+                "playlists",
+                playlistDocument.id,
+                "tracks"
+              ),
+              orderBy("addedAt", "desc")
+            );
+
+            const unsubscribeTracks =
+              onSnapshot(
+                playlistTracksQuery,
+                (tracksSnapshot) => {
+                  const playlistTracks =
+                    tracksSnapshot.docs.map(
+                      (trackDocument) =>
+                        createTrack(
+                          trackDocument.id,
+                          trackDocument.data()
+                        )
+                    );
+
+                  setPlaylists(
+                    (currentPlaylists) =>
+                      currentPlaylists.map(
+                        (playlist) =>
+                          playlist.id ===
+                          playlistDocument.id
+                            ? {
+                                ...playlist,
+                                tracks:
+                                  playlistTracks,
+                                tracksLoading:
+                                  false,
+                              }
+                            : playlist
+                      )
+                  );
+                },
+                (snapshotError) => {
+                  console.error(
+                    "Playlist tracks loading error:",
+                    snapshotError
+                  );
+
+                  setPlaylistsError(
+                    "We couldn't load all of your playlist tracks."
+                  );
+
+                  setPlaylists(
+                    (currentPlaylists) =>
+                      currentPlaylists.map(
+                        (playlist) =>
+                          playlist.id ===
+                          playlistDocument.id
+                            ? {
+                                ...playlist,
+                                tracksLoading:
+                                  false,
+                              }
+                            : playlist
+                      )
+                  );
+                }
+              );
+
+            trackUnsubscribes.push(
+              unsubscribeTracks
+            );
+          }
+        );
+      },
+      (snapshotError) => {
+        console.error(
+          "Playlists loading error:",
+          snapshotError
+        );
+
+        setPlaylistsError(
+          "We couldn't load your playlists."
+        );
+
+        setPlaylistsLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribePlaylists();
+
+      trackUnsubscribes.forEach(
+        (unsubscribe) => unsubscribe()
+      );
+    };
+  }, [user]);
+
+  const selectedPlaylist =
+    playlists.find(
+      (playlist) =>
+        playlist.id === selectedPlaylistId
+    ) ?? null;
+
+  const visibleTracks =
+    activeTab === "favourites"
+      ? favourites
+      : history;
+
+  const visibleLoading =
+    activeTab === "favourites"
+      ? favouritesLoading
+      : historyLoading;
+
+  const visibleError =
+    activeTab === "favourites"
+      ? favouritesError
+      : historyError;
 
   function handlePlayTrack(
     track: Track,
     tracks: Track[]
   ) {
-    loadQueue(
-      tracks,
-      track.id,
-      {
-        journey: "library",
-        emotion: "",
-      }
-    );
+    if (tracks.length === 0) {
+      return;
+    }
 
-    const parameters =
-      new URLSearchParams({
-        track: track.id,
-        journey: "library",
-      });
+    loadQueue(tracks, track.id, {
+      journey:
+        activeTab === "playlists"
+          ? "playlist"
+          : "library",
+      emotion: "",
+    });
+
+    const parameters = new URLSearchParams({
+      track: track.id,
+      journey:
+        activeTab === "playlists"
+          ? "playlist"
+          : "library",
+    });
 
     router.push(
       `/player?${parameters.toString()}`
@@ -249,10 +479,10 @@ export default function LibraryPage() {
           trackId
         )
       );
-    } catch (error) {
+    } catch (removeError) {
       console.error(
         "Remove favourite error:",
-        error
+        removeError
       );
 
       setFavouritesError(
@@ -283,10 +513,10 @@ export default function LibraryPage() {
           trackId
         )
       );
-    } catch (error) {
+    } catch (removeError) {
       console.error(
         "Remove history error:",
-        error
+        removeError
       );
 
       setHistoryError(
@@ -297,20 +527,285 @@ export default function LibraryPage() {
     }
   }
 
-  const visibleTracks =
-    activeTab === "favourites"
-      ? favourites
-      : history;
+  async function handleRemovePlaylistTrack(
+    playlistId: string,
+    trackId: string
+  ) {
+    if (!user || removingTrackId) {
+      return;
+    }
 
-  const visibleLoading =
-    activeTab === "favourites"
-      ? favouritesLoading
-      : historyLoading;
+    const removalId =
+      `${playlistId}:${trackId}`;
 
-  const visibleError =
-    activeTab === "favourites"
-      ? favouritesError
-      : historyError;
+    try {
+      setRemovingTrackId(removalId);
+      setPlaylistsError("");
+
+      await deleteDoc(
+        doc(
+          db,
+          "users",
+          user.uid,
+          "playlists",
+          playlistId,
+          "tracks",
+          trackId
+        )
+      );
+
+      await updateDoc(
+        doc(
+          db,
+          "users",
+          user.uid,
+          "playlists",
+          playlistId
+        ),
+        {
+          updatedAt: new Date(),
+        }
+      );
+    } catch (removeError) {
+      console.error(
+        "Remove playlist track error:",
+        removeError
+      );
+
+      setPlaylistsError(
+        "We couldn't remove this track from the playlist."
+      );
+    } finally {
+      setRemovingTrackId("");
+    }
+  }
+
+  function startRenamingPlaylist(
+    playlist: Playlist
+  ) {
+    setEditingPlaylistId(playlist.id);
+    setEditedPlaylistName(playlist.name);
+    setPlaylistsError("");
+  }
+
+  function cancelRenamingPlaylist() {
+    setEditingPlaylistId("");
+    setEditedPlaylistName("");
+  }
+
+  async function handleRenamePlaylist(
+    playlistId: string
+  ) {
+    if (
+      !user ||
+      savingPlaylistName
+    ) {
+      return;
+    }
+
+    const cleanedName =
+      editedPlaylistName.trim();
+
+    if (!cleanedName) {
+      setPlaylistsError(
+        "Please enter a playlist name."
+      );
+      return;
+    }
+
+    try {
+      setSavingPlaylistName(true);
+      setPlaylistsError("");
+
+      await updateDoc(
+        doc(
+          db,
+          "users",
+          user.uid,
+          "playlists",
+          playlistId
+        ),
+        {
+          name: cleanedName,
+          updatedAt: new Date(),
+        }
+      );
+
+      cancelRenamingPlaylist();
+    } catch (renameError) {
+      console.error(
+        "Rename playlist error:",
+        renameError
+      );
+
+      setPlaylistsError(
+        "We couldn't rename this playlist."
+      );
+    } finally {
+      setSavingPlaylistName(false);
+    }
+  }
+
+  async function handleDeletePlaylist(
+    playlist: Playlist
+  ) {
+    if (
+      !user ||
+      deletingPlaylistId
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${playlist.name}"? This will remove the playlist, but it will not delete the tracks from MoodTune.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingPlaylistId(
+        playlist.id
+      );
+
+      setPlaylistsError("");
+
+      const tracksReference = collection(
+        db,
+        "users",
+        user.uid,
+        "playlists",
+        playlist.id,
+        "tracks"
+      );
+
+      const tracksSnapshot =
+        await getDocs(tracksReference);
+
+      const batch = writeBatch(db);
+
+      tracksSnapshot.docs.forEach(
+        (trackDocument) => {
+          batch.delete(
+            doc(
+              db,
+              "users",
+              user.uid,
+              "playlists",
+              playlist.id,
+              "tracks",
+              trackDocument.id
+            )
+          );
+        }
+      );
+
+      batch.delete(
+        doc(
+          db,
+          "users",
+          user.uid,
+          "playlists",
+          playlist.id
+        )
+      );
+
+      await batch.commit();
+
+      if (
+        selectedPlaylistId === playlist.id
+      ) {
+        setSelectedPlaylistId(null);
+      }
+
+      if (
+        editingPlaylistId === playlist.id
+      ) {
+        cancelRenamingPlaylist();
+      }
+    } catch (deleteError) {
+      console.error(
+        "Delete playlist error:",
+        deleteError
+      );
+
+      setPlaylistsError(
+        "We couldn't delete this playlist."
+      );
+    } finally {
+      setDeletingPlaylistId("");
+    }
+  }
+
+  function renderTrackCard(
+    track: Track,
+    tracks: Track[],
+    removeAction: () => void,
+    removeLabel: string,
+    removeButtonText: string,
+    removalId: string,
+    removeButtonClass: string
+  ) {
+    return (
+      <article
+        key={track.id}
+        className="result-track-card"
+      >
+        <div className="result-track-main">
+          {track.coverURL === "pending" ? (
+            <div className="result-cover-placeholder">
+              ♪
+            </div>
+          ) : (
+            <Image
+              src={track.coverURL}
+              alt={`${track.title} cover`}
+              width={72}
+              height={72}
+              className="result-cover"
+            />
+          )}
+
+          <div className="result-track-details">
+            <p className="result-genre">
+              {track.genre}
+            </p>
+
+            <h2>{track.title}</h2>
+
+            <p>{track.artist}</p>
+          </div>
+        </div>
+
+        <div className="library-track-actions">
+          <button
+            type="button"
+            className={removeButtonClass}
+            onClick={removeAction}
+            disabled={
+              removingTrackId === removalId
+            }
+            aria-label={removeLabel}
+          >
+            {removingTrackId === removalId
+              ? "Removing..."
+              : removeButtonText}
+          </button>
+
+          <button
+            type="button"
+            className="result-play-button"
+            onClick={() =>
+              handlePlayTrack(track, tracks)
+            }
+          >
+            Play →
+          </button>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <main className="emotion-page">
@@ -340,18 +835,19 @@ export default function LibraryPage() {
           </h1>
 
           <p>
-            Revisit your favourite tracks
-            and recently played music.
+            Revisit your favourites,
+            recently played music and
+            personal playlists.
           </p>
         </div>
 
-        {authLoading && (
+        {authLoading ? (
           <p className="auth-description">
             Checking your account...
           </p>
-        )}
+        ) : null}
 
-        {!authLoading && !user && (
+        {!authLoading && !user ? (
           <div className="library-message">
             <div
               className="library-message-icon"
@@ -365,9 +861,10 @@ export default function LibraryPage() {
             </h2>
 
             <p>
-              Your favourites and listening
-              history are saved securely to
-              your MoodTune account.
+              Your favourites, listening
+              history and playlists are
+              saved securely to your
+              MoodTune account.
             </p>
 
             <Link
@@ -384,9 +881,9 @@ export default function LibraryPage() {
               Create an account
             </Link>
           </div>
-        )}
+        ) : null}
 
-        {!authLoading && user && (
+        {!authLoading && user ? (
           <>
             <div
               className="library-tabs"
@@ -397,28 +894,23 @@ export default function LibraryPage() {
                 type="button"
                 role="tab"
                 aria-selected={
-                  activeTab ===
-                  "favourites"
+                  activeTab === "favourites"
                 }
                 className={
-                  activeTab ===
-                  "favourites"
+                  activeTab === "favourites"
                     ? "library-tab active"
                     : "library-tab"
                 }
-                onClick={() =>
-                  setActiveTab(
-                    "favourites"
-                  )
-                }
+                onClick={() => {
+                  setActiveTab("favourites");
+                  setSelectedPlaylistId(null);
+                }}
               >
                 <span aria-hidden="true">
                   ♥
                 </span>
 
-                <span>
-                  Favourites
-                </span>
+                <span>Favourites</span>
 
                 <span className="library-tab-count">
                   {favourites.length}
@@ -436,9 +928,10 @@ export default function LibraryPage() {
                     ? "library-tab active"
                     : "library-tab"
                 }
-                onClick={() =>
-                  setActiveTab("history")
-                }
+                onClick={() => {
+                  setActiveTab("history");
+                  setSelectedPlaylistId(null);
+                }}
               >
                 <span aria-hidden="true">
                   ↻
@@ -452,184 +945,467 @@ export default function LibraryPage() {
                   {history.length}
                 </span>
               </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={
+                  activeTab === "playlists"
+                }
+                className={
+                  activeTab === "playlists"
+                    ? "library-tab active"
+                    : "library-tab"
+                }
+                onClick={() =>
+                  setActiveTab("playlists")
+                }
+              >
+                <span aria-hidden="true">
+                  ♫
+                </span>
+
+                <span>Playlists</span>
+
+                <span className="library-tab-count">
+                  {playlists.length}
+                </span>
+              </button>
             </div>
 
-            {visibleLoading && (
-              <p className="auth-description">
-                {activeTab ===
-                "favourites"
-                  ? "Loading your favourites..."
-                  : "Loading your listening history..."}
-              </p>
-            )}
-
-            {visibleError && (
-              <p className="results-error">
-                {visibleError}
-              </p>
-            )}
-
-            {!visibleLoading &&
-              !visibleError &&
-              visibleTracks.length ===
-                0 && (
-                <div className="library-message">
-                  <div
-                    className="library-message-icon"
-                    aria-hidden="true"
-                  >
+            {activeTab !== "playlists" ? (
+              <>
+                {visibleLoading ? (
+                  <p className="auth-description">
                     {activeTab ===
                     "favourites"
-                      ? "♡"
-                      : "↻"}
+                      ? "Loading your favourites..."
+                      : "Loading your listening history..."}
+                  </p>
+                ) : null}
+
+                {visibleError ? (
+                  <p className="results-error">
+                    {visibleError}
+                  </p>
+                ) : null}
+
+                {!visibleLoading &&
+                !visibleError &&
+                visibleTracks.length === 0 ? (
+                  <div className="library-message">
+                    <div
+                      className="library-message-icon"
+                      aria-hidden="true"
+                    >
+                      {activeTab ===
+                      "favourites"
+                        ? "♡"
+                        : "↻"}
+                    </div>
+
+                    <h2>
+                      {activeTab ===
+                      "favourites"
+                        ? "Your favourites are waiting"
+                        : "Nothing played yet"}
+                    </h2>
+
+                    <p>
+                      {activeTab ===
+                      "favourites"
+                        ? "Browse your recommendations and press the heart button to save tracks here."
+                        : "Tracks will appear here after you start listening to them."}
+                    </p>
+
+                    <Link
+                      href="/browse?journey=feel"
+                      className="button"
+                    >
+                      Find music
+                    </Link>
                   </div>
+                ) : null}
 
-                  <h2>
-                    {activeTab ===
-                    "favourites"
-                      ? "Your favourites are waiting"
-                      : "Nothing played yet"}
-                  </h2>
-
-                  <p>
-                    {activeTab ===
-                    "favourites"
-                      ? "Browse your recommendations and press the heart button to save tracks here."
-                      : "Tracks will appear here after you start listening to them."}
-                  </p>
-
-                  <Link
-                    href="/browse?journey=feel"
-                    className="button"
-                  >
-                    Find music
-                  </Link>
-                </div>
-              )}
-
-            {!visibleLoading &&
-              visibleTracks.length > 0 && (
-                <>
-                  <p className="library-count">
-                    {visibleTracks.length}{" "}
-                    {visibleTracks.length ===
-                    1
-                      ? activeTab ===
-                        "favourites"
-                        ? "saved track"
-                        : "recent track"
-                      : activeTab ===
+                {!visibleLoading &&
+                visibleTracks.length > 0 ? (
+                  <>
+                    <p className="library-count">
+                      {visibleTracks.length}{" "}
+                      {visibleTracks.length === 1
+                        ? activeTab ===
                           "favourites"
-                        ? "saved tracks"
-                        : "recent tracks"}
+                          ? "saved track"
+                          : "recent track"
+                        : activeTab ===
+                          "favourites"
+                          ? "saved tracks"
+                          : "recent tracks"}
+                    </p>
+
+                    <div className="results-grid">
+                      {visibleTracks.map(
+                        (track) =>
+                          renderTrackCard(
+                            track,
+                            visibleTracks,
+                            () => {
+                              if (
+                                activeTab ===
+                                "favourites"
+                              ) {
+                                void handleRemoveFavourite(
+                                  track.id
+                                );
+                              } else {
+                                void handleRemoveHistory(
+                                  track.id
+                                );
+                              }
+                            },
+                            activeTab ===
+                            "favourites"
+                              ? `Remove ${track.title} from favourites`
+                              : `Remove ${track.title} from listening history`,
+                            activeTab ===
+                            "favourites"
+                              ? "♥"
+                              : "×",
+                            track.id,
+                            activeTab ===
+                            "favourites"
+                              ? "library-remove-button"
+                              : "history-remove-button"
+                          )
+                      )}
+                    </div>
+                  </>
+                ) : null}
+              </>
+            ) : null}
+
+            {activeTab === "playlists" ? (
+              <>
+                {playlistsLoading ? (
+                  <p className="auth-description">
+                    Loading your playlists...
                   </p>
+                ) : null}
 
-                  <div className="results-grid">
-                    {visibleTracks.map(
-                      (track) => (
-                        <article
-                          key={track.id}
-                          className="result-track-card"
-                        >
-                          <div className="result-track-main">
-                            {track.coverURL ===
-                            "pending" ? (
-                              <div className="result-cover-placeholder">
-                                ♪
-                              </div>
-                            ) : (
-                              <Image
-                                src={
-                                  track.coverURL
-                                }
-                                alt={`${track.title} cover`}
-                                width={72}
-                                height={72}
-                                className="result-cover"
-                              />
-                            )}
+                {playlistsError ? (
+                  <p className="results-error">
+                    {playlistsError}
+                  </p>
+                ) : null}
 
-                            <div className="result-track-details">
-                              <p className="result-genre">
-                                {
-                                  track.genre
-                                }
-                              </p>
+                {!playlistsLoading &&
+                playlists.length === 0 ? (
+                  <div className="library-message">
+                    <div
+                      className="library-message-icon"
+                      aria-hidden="true"
+                    >
+                      ♫
+                    </div>
 
-                              <h2>
-                                {
-                                  track.title
-                                }
-                              </h2>
+                    <h2>
+                      Create your first playlist
+                    </h2>
 
-                              <p>
-                                {
-                                  track.artist
-                                }
-                              </p>
-                            </div>
-                          </div>
+                    <p>
+                      Find a track you love,
+                      select Add to playlist
+                      and create your own
+                      collection.
+                    </p>
 
-                          <div className="library-track-actions">
+                    <Link
+                      href="/browse?journey=feel"
+                      className="button"
+                    >
+                      Find music
+                    </Link>
+                  </div>
+                ) : null}
+
+                {!playlistsLoading &&
+                playlists.length > 0 &&
+                !selectedPlaylist ? (
+                  <>
+                    <p className="library-count">
+                      {playlists.length}{" "}
+                      {playlists.length === 1
+                        ? "playlist"
+                        : "playlists"}
+                    </p>
+
+                    <div className="playlist-library-grid">
+                      {playlists.map(
+                        (playlist) => (
+                          <article
+                            key={playlist.id}
+                            className="playlist-library-card"
+                          >
                             <button
                               type="button"
-                              className={
-                                activeTab ===
-                                "favourites"
-                                  ? "library-remove-button"
-                                  : "history-remove-button"
-                              }
+                              className="playlist-library-open"
                               onClick={() =>
-                                activeTab ===
-                                "favourites"
-                                  ? handleRemoveFavourite(
-                                      track.id
-                                    )
-                                  : handleRemoveHistory(
-                                      track.id
-                                    )
-                              }
-                              disabled={
-                                removingTrackId ===
-                                track.id
-                              }
-                              aria-label={
-                                activeTab ===
-                                "favourites"
-                                  ? `Remove ${track.title} from favourites`
-                                  : `Remove ${track.title} from listening history`
-                              }
-                            >
-                              {removingTrackId ===
-                              track.id
-                                ? "Removing..."
-                                : activeTab ===
-                                    "favourites"
-                                  ? "♥"
-                                  : "×"}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="result-play-button"
-                              onClick={() =>
-                                handlePlayTrack(
-                                  track,
-                                  visibleTracks
+                                setSelectedPlaylistId(
+                                  playlist.id
                                 )
                               }
                             >
-                              Play →
+                              <span
+                                className="playlist-library-icon"
+                                aria-hidden="true"
+                              >
+                                ♫
+                              </span>
+
+                              <span className="playlist-library-information">
+                                <strong>
+                                  {
+                                    playlist.name
+                                  }
+                                </strong>
+
+                                <span>
+                                  {playlist.tracksLoading
+                                    ? "Loading tracks..."
+                                    : `${playlist.tracks.length} ${
+                                        playlist
+                                          .tracks
+                                          .length ===
+                                        1
+                                          ? "track"
+                                          : "tracks"
+                                      }`}
+                                </span>
+                              </span>
+
+                              <span aria-hidden="true">
+                                →
+                              </span>
                             </button>
-                          </div>
-                        </article>
-                      )
-                    )}
+
+                            <div className="playlist-library-actions">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  startRenamingPlaylist(
+                                    playlist
+                                  )
+                                }
+                              >
+                                Rename
+                              </button>
+
+                              <button
+                                type="button"
+                                className="playlist-delete-button"
+                                onClick={() => {
+                                  void handleDeletePlaylist(
+                                    playlist
+                                  );
+                                }}
+                                disabled={
+                                  deletingPlaylistId ===
+                                  playlist.id
+                                }
+                              >
+                                {deletingPlaylistId ===
+                                playlist.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
+                            </div>
+
+                            {editingPlaylistId ===
+                            playlist.id ? (
+                              <div className="playlist-rename-form">
+                                <label
+                                  htmlFor={`rename-${playlist.id}`}
+                                >
+                                  Playlist name
+                                </label>
+
+                                <input
+                                  id={`rename-${playlist.id}`}
+                                  type="text"
+                                  value={
+                                    editedPlaylistName
+                                  }
+                                  onChange={(
+                                    event
+                                  ) =>
+                                    setEditedPlaylistName(
+                                      event
+                                        .target
+                                        .value
+                                    )
+                                  }
+                                  maxLength={60}
+                                  autoFocus
+                                />
+
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      void handleRenamePlaylist(
+                                        playlist.id
+                                      );
+                                    }}
+                                    disabled={
+                                      savingPlaylistName ||
+                                      !editedPlaylistName.trim()
+                                    }
+                                  >
+                                    {savingPlaylistName
+                                      ? "Saving..."
+                                      : "Save"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={
+                                      cancelRenamingPlaylist
+                                    }
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : null}
+                          </article>
+                        )
+                      )}
+                    </div>
+                  </>
+                ) : null}
+
+                {selectedPlaylist ? (
+                  <div className="selected-playlist">
+                    <button
+                      type="button"
+                      className="selected-playlist-back"
+                      onClick={() =>
+                        setSelectedPlaylistId(
+                          null
+                        )
+                      }
+                    >
+                      ← All playlists
+                    </button>
+
+                    <div className="selected-playlist-heading">
+                      <div>
+                        <p className="eyebrow auth-eyebrow">
+                          PLAYLIST
+                        </p>
+
+                        <h2>
+                          {
+                            selectedPlaylist.name
+                          }
+                        </h2>
+
+                        <p>
+                          {selectedPlaylist
+                            .tracks.length}{" "}
+                          {selectedPlaylist
+                            .tracks.length === 1
+                            ? "track"
+                            : "tracks"}
+                        </p>
+                      </div>
+
+                      {selectedPlaylist.tracks
+                        .length > 0 ? (
+                        <button
+                          type="button"
+                          className="button playlist-play-all"
+                          onClick={() =>
+                            handlePlayTrack(
+                              selectedPlaylist
+                                .tracks[0],
+                              selectedPlaylist
+                                .tracks
+                            )
+                          }
+                        >
+                          Play all →
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {selectedPlaylist.tracksLoading ? (
+                      <p className="auth-description">
+                        Loading playlist
+                        tracks...
+                      </p>
+                    ) : null}
+
+                    {!selectedPlaylist.tracksLoading &&
+                    selectedPlaylist.tracks
+                      .length === 0 ? (
+                      <div className="library-message">
+                        <div
+                          className="library-message-icon"
+                          aria-hidden="true"
+                        >
+                          ♫
+                        </div>
+
+                        <h2>
+                          This playlist is empty
+                        </h2>
+
+                        <p>
+                          Browse your
+                          recommendations and
+                          add some music to this
+                          playlist.
+                        </p>
+
+                        <Link
+                          href="/browse?journey=feel"
+                          className="button"
+                        >
+                          Find music
+                        </Link>
+                      </div>
+                    ) : null}
+
+                    {!selectedPlaylist.tracksLoading &&
+                    selectedPlaylist.tracks
+                      .length > 0 ? (
+                      <div className="results-grid">
+                        {selectedPlaylist.tracks.map(
+                          (track) =>
+                            renderTrackCard(
+                              track,
+                              selectedPlaylist.tracks,
+                              () => {
+                                void handleRemovePlaylistTrack(
+                                  selectedPlaylist.id,
+                                  track.id
+                                );
+                              },
+                              `Remove ${track.title} from ${selectedPlaylist.name}`,
+                              "×",
+                              `${selectedPlaylist.id}:${track.id}`,
+                              "history-remove-button"
+                            )
+                        )}
+                      </div>
+                    ) : null}
                   </div>
-                </>
-              )}
+                ) : null}
+              </>
+            ) : null}
           </>
-        )}
+        ) : null}
       </section>
     </main>
   );
