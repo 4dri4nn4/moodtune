@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+} from "next/navigation";
 import {
   useEffect,
   useState,
@@ -45,12 +47,16 @@ export default function PlayerView({
     isPlaying,
     currentTime,
     duration,
+    volume,
+    isMuted,
     error: playerError,
     loadQueue,
     togglePlay,
     playNext,
     playPrevious,
     seek,
+    setVolume,
+    toggleMute,
     minimizePlayer,
   } = usePlayer();
 
@@ -61,8 +67,11 @@ export default function PlayerView({
     toggleFavourite,
   } = useFavourite(currentTrack);
 
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [pageError, setPageError] =
+    useState("");
 
   useEffect(() => {
     let active = true;
@@ -100,9 +109,8 @@ export default function PlayerView({
             )
           );
 
-          const snapshot = await getDocs(
-            tracksQuery
-          );
+          const snapshot =
+            await getDocs(tracksQuery);
 
           if (!active) {
             return;
@@ -198,7 +206,7 @@ export default function PlayerView({
       }
     }
 
-    preparePlayer();
+    void preparePlayer();
 
     return () => {
       active = false;
@@ -220,10 +228,11 @@ export default function PlayerView({
       return;
     }
 
-    const parameters = new URLSearchParams({
-      track: currentTrack.id,
-      journey,
-    });
+    const parameters =
+      new URLSearchParams({
+        track: currentTrack.id,
+        journey,
+      });
 
     if (emotion) {
       parameters.set(
@@ -249,7 +258,10 @@ export default function PlayerView({
   function handleMinimize() {
     minimizePlayer();
 
-    if (journey === "library") {
+    if (
+      journey === "library" ||
+      journey === "playlist"
+    ) {
       router.push("/library");
       return;
     }
@@ -266,10 +278,11 @@ export default function PlayerView({
       return;
     }
 
-    const parameters = new URLSearchParams({
-      journey,
-      emotion,
-    });
+    const parameters =
+      new URLSearchParams({
+        journey,
+        emotion,
+      });
 
     router.push(
       `/results?${parameters.toString()}`
@@ -297,19 +310,32 @@ export default function PlayerView({
   const visibleError =
     pageError || playerError;
 
-  const returnHref =
-    journey === "library"
-      ? "/library"
-      : `/browse?journey=${
-          journey === "want"
-            ? "want"
-            : "feel"
-        }`;
+  const cameFromLibrary =
+    journey === "library" ||
+    journey === "playlist";
 
-  const returnLabel =
-    journey === "library"
-      ? "← Back to your Library"
-      : "← Choose another emotion";
+  const returnHref = cameFromLibrary
+    ? "/library"
+    : `/browse?journey=${
+        journey === "want"
+          ? "want"
+          : "feel"
+      }`;
+
+  const returnLabel = cameFromLibrary
+    ? "← Back to your Library"
+    : "← Choose another emotion";
+
+  const volumePercentage = Math.round(
+    volume * 100
+  );
+
+  const volumeIcon =
+    isMuted || volume === 0
+      ? "🔇"
+      : volume < 0.5
+        ? "🔉"
+        : "🔊";
 
   return (
     <main className="emotion-page">
@@ -327,224 +353,292 @@ export default function PlayerView({
 
       <section className="player-panel">
         {!loading &&
-          !visibleError &&
-          currentTrack && (
-            <div className="player-panel-actions">
-              <button
-                type="button"
-                className={
-                  isFavourite
-                    ? "player-favourite-button favourite-active"
-                    : "player-favourite-button"
-                }
-                onClick={toggleFavourite}
-                disabled={updatingFavourite}
-                aria-label={
-                  isFavourite
-                    ? `Remove ${currentTrack.title} from favourites`
-                    : `Add ${currentTrack.title} to favourites`
-                }
-                aria-pressed={isFavourite}
-              >
-                <span aria-hidden="true">
-                  {updatingFavourite
-                    ? "…"
-                    : isFavourite
-                      ? "♥"
-                      : "♡"}
-                </span>
+        !visibleError &&
+        currentTrack ? (
+          <div className="player-panel-actions">
+            <button
+              type="button"
+              className={
+                isFavourite
+                  ? "player-favourite-button favourite-active"
+                  : "player-favourite-button"
+              }
+              onClick={() => {
+                void toggleFavourite();
+              }}
+              disabled={updatingFavourite}
+              aria-label={
+                isFavourite
+                  ? `Remove ${currentTrack.title} from favourites`
+                  : `Add ${currentTrack.title} to favourites`
+              }
+              aria-pressed={isFavourite}
+            >
+              <span aria-hidden="true">
+                {updatingFavourite
+                  ? "…"
+                  : isFavourite
+                    ? "♥"
+                    : "♡"}
+              </span>
 
-                <span>
-                  {isFavourite
-                    ? "Saved"
-                    : "Add to favourites"}
-                </span>
-              </button>
+              <span>
+                {isFavourite
+                  ? "Saved"
+                  : "Add to favourites"}
+              </span>
+            </button>
 
-              <button
-                type="button"
-                className="player-minimize-button"
-                onClick={handleMinimize}
-                aria-label="Minimize player"
-              >
-                <span aria-hidden="true">
-                  ─
-                </span>
+            <button
+              type="button"
+              className="player-minimize-button"
+              onClick={handleMinimize}
+              aria-label="Minimize player"
+            >
+              <span aria-hidden="true">
+                ─
+              </span>
 
-                <span>
-                  Minimize player
-                </span>
-              </button>
-            </div>
-          )}
+              <span>
+                Minimize player
+              </span>
+            </button>
+          </div>
+        ) : null}
 
         <div className="emotion-heading">
           <p className="eyebrow auth-eyebrow">
             NOW PLAYING
           </p>
 
-          {loading && (
+          {loading ? (
             <h1>
               Loading your track...
             </h1>
-          )}
+          ) : null}
 
-          {visibleError && (
+          {visibleError ? (
             <>
               <h1>
                 Something went wrong
               </h1>
 
-              <p>
-                {visibleError}
-              </p>
+              <p>{visibleError}</p>
             </>
-          )}
+          ) : null}
 
           {!loading &&
-            !visibleError &&
-            currentTrack && (
-              <>
-                <h1>
-                  Your soundtrack
-                </h1>
+          !visibleError &&
+          currentTrack ? (
+            <>
+              <h1>Your soundtrack</h1>
 
-                <p>
-                  Listen, move through the playlist,
-                  save favourites, or minimize the
-                  player while browsing.
-                </p>
-              </>
-            )}
+              <p>
+                Listen, move through the
+                playlist, save favourites,
+                adjust the volume, or
+                minimize the player while
+                browsing.
+              </p>
+            </>
+          ) : null}
         </div>
 
-        {favouriteError && (
+        {favouriteError ? (
           <p
             className="results-error player-favourite-error"
             role="alert"
           >
             {favouriteError}
           </p>
-        )}
+        ) : null}
 
         {!loading &&
-          !visibleError &&
-          currentTrack && (
-            <div className="player-card">
-              <div className="player-artwork">
-                {currentTrack.coverURL ===
-                "pending" ? (
-                  <div className="player-artwork-placeholder">
-                    ♪
-                  </div>
-                ) : (
-                  <Image
-                    src={currentTrack.coverURL}
-                    alt={`${currentTrack.title} cover`}
-                    width={220}
-                    height={220}
-                    priority
-                  />
-                )}
-              </div>
-
-              <div className="player-track-info">
-                <p className="result-genre">
-                  {currentTrack.genre}
-                </p>
-
-                <h2>
-                  {currentTrack.title}
-                </h2>
-
-                <p>
-                  {currentTrack.artist}
-                </p>
-
-                <div className="player-tags">
-                  {currentTrack.emotionTags?.map(
-                    (tag) => (
-                      <span key={tag}>
-                        {tag}
-                      </span>
-                    )
-                  )}
+        !visibleError &&
+        currentTrack ? (
+          <div className="player-card">
+            <div className="player-artwork">
+              {currentTrack.coverURL ===
+              "pending" ? (
+                <div className="player-artwork-placeholder">
+                  ♪
                 </div>
-
-                {queue.length > 1 && (
-                  <p className="player-queue-position">
-                    Track {currentIndex + 1} of{" "}
-                    {queue.length}
-                  </p>
-                )}
-              </div>
-
-              <div className="player-progress">
-                <input
-                  type="range"
-                  min="0"
-                  max={duration || 0}
-                  value={currentTime}
-                  step="0.1"
-                  onChange={(
-                    event: ChangeEvent<HTMLInputElement>
-                  ) =>
-                    seek(
-                      Number(
-                        event.target.value
-                      )
-                    )
+              ) : (
+                <Image
+                  src={
+                    currentTrack.coverURL
                   }
-                  aria-label="Track progress"
+                  alt={`${currentTrack.title} cover`}
+                  width={220}
+                  height={220}
+                  priority
                 />
+              )}
+            </div>
 
-                <div className="player-time">
-                  <span>
-                    {formatTime(currentTime)}
-                  </span>
+            <div className="player-track-info">
+              <p className="result-genre">
+                {currentTrack.genre}
+              </p>
 
-                  <span>
-                    {formatTime(duration)}
-                  </span>
-                </div>
+              <h2>
+                {currentTrack.title}
+              </h2>
+
+              <p>
+                {currentTrack.artist}
+              </p>
+
+              <div className="player-tags">
+                {currentTrack.emotionTags?.map(
+                  (tag) => (
+                    <span key={tag}>
+                      {tag}
+                    </span>
+                  )
+                )}
               </div>
 
-              <div className="player-controls">
-                <button
-                  type="button"
-                  onClick={playPrevious}
-                  disabled={queue.length < 2}
-                  aria-label="Previous track"
-                >
-                  ◀
-                </button>
+              {queue.length > 1 ? (
+                <p className="player-queue-position">
+                  Track {currentIndex + 1}{" "}
+                  of {queue.length}
+                </p>
+              ) : null}
+            </div>
 
-                <button
-                  type="button"
-                  className="player-main-button"
-                  onClick={togglePlay}
-                  aria-label={
-                    isPlaying
-                      ? "Pause"
-                      : "Play"
-                  }
-                >
-                  {isPlaying
-                    ? "❚❚"
-                    : "▶"}
-                </button>
+            <div className="player-progress">
+              <input
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                step="0.1"
+                onChange={(
+                  event: ChangeEvent<HTMLInputElement>
+                ) =>
+                  seek(
+                    Number(
+                      event.target.value
+                    )
+                  )
+                }
+                aria-label="Track progress"
+              />
 
-                <button
-                  type="button"
-                  onClick={playNext}
-                  disabled={queue.length < 2}
-                  aria-label="Next track"
-                >
-                  ▶
-                </button>
+              <div className="player-time">
+                <span>
+                  {formatTime(currentTime)}
+                </span>
+
+                <span>
+                  {formatTime(duration)}
+                </span>
               </div>
             </div>
-          )}
+
+            <div className="player-volume-control">
+              <button
+                type="button"
+                className="player-mute-button"
+                onClick={toggleMute}
+                aria-label={
+                  isMuted
+                    ? "Unmute audio"
+                    : "Mute audio"
+                }
+                aria-pressed={isMuted}
+                title={
+                  isMuted
+                    ? "Unmute"
+                    : "Mute"
+                }
+              >
+                <span aria-hidden="true">
+                  {volumeIcon}
+                </span>
+              </button>
+
+              <label htmlFor="player-volume">
+                Volume
+              </label>
+
+              <input
+                id="player-volume"
+                type="range"
+                min="0"
+                max="1"
+                value={volume}
+                step="0.01"
+                onChange={(
+                  event: ChangeEvent<HTMLInputElement>
+                ) =>
+                  setVolume(
+                    Number(
+                      event.target.value
+                    )
+                  )
+                }
+                aria-label="Player volume"
+                aria-valuetext={
+                  isMuted
+                    ? "Muted"
+                    : `${volumePercentage} percent`
+                }
+              />
+
+              <output
+                htmlFor="player-volume"
+                aria-live="polite"
+              >
+                {isMuted
+                  ? "Muted"
+                  : `${volumePercentage}%`}
+              </output>
+            </div>
+
+            <div className="player-controls">
+              <button
+                type="button"
+                onClick={playPrevious}
+                disabled={
+                  queue.length < 2
+                }
+                aria-label="Previous track"
+              >
+                ◀
+              </button>
+
+              <button
+                type="button"
+                className="player-main-button"
+                onClick={() => {
+                  void togglePlay();
+                }}
+                aria-label={
+                  isPlaying
+                    ? "Pause"
+                    : "Play"
+                }
+              >
+                {isPlaying
+                  ? "❚❚"
+                  : "▶"}
+              </button>
+
+              <button
+                type="button"
+                onClick={playNext}
+                disabled={
+                  queue.length < 2
+                }
+                aria-label="Next track"
+              >
+                ▶
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <Link
           href={returnHref}

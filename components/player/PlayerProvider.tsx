@@ -44,22 +44,67 @@ type PlayerContextValue = {
   isMinimized: boolean;
   currentTime: number;
   duration: number;
+  volume: number;
+  isMuted: boolean;
   error: string;
+
   loadQueue: (
     tracks: Track[],
     selectedTrackId: string,
     context?: JourneyContext
   ) => void;
+
   togglePlay: () => Promise<void>;
   playNext: () => void;
   playPrevious: () => void;
   seek: (newTime: number) => void;
+  setVolume: (newVolume: number) => void;
+  toggleMute: () => void;
   minimizePlayer: () => void;
   expandPlayer: () => void;
 };
 
 const PlayerContext =
-  createContext<PlayerContextValue | null>(null);
+  createContext<PlayerContextValue | null>(
+    null
+  );
+
+function getSavedVolume() {
+  if (typeof window === "undefined") {
+    return 0.8;
+  }
+
+  const savedVolume =
+    window.localStorage.getItem(
+      "moodtune-volume"
+    );
+
+  const parsedVolume = Number(savedVolume);
+
+  if (
+    savedVolume === null ||
+    !Number.isFinite(parsedVolume)
+  ) {
+    return 0.8;
+  }
+
+  return Math.min(
+    1,
+    Math.max(0, parsedVolume)
+  );
+}
+
+function getSavedMutedState() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.localStorage.getItem(
+      "moodtune-muted"
+    ) === "true"
+  );
+}
 
 export default function PlayerProvider({
   children,
@@ -71,6 +116,9 @@ export default function PlayerProvider({
 
   const lastRecordedTrackId =
     useRef("");
+
+  const lastAudibleVolume =
+    useRef(0.8);
 
   const [queue, setQueue] =
     useState<Track[]>([]);
@@ -96,6 +144,12 @@ export default function PlayerProvider({
   const [duration, setDuration] =
     useState(0);
 
+  const [volume, setVolumeState] =
+    useState(getSavedVolume);
+
+  const [isMuted, setIsMuted] =
+    useState(getSavedMutedState);
+
   const [error, setError] =
     useState("");
 
@@ -109,6 +163,27 @@ export default function PlayerProvider({
         track.id === currentTrack.id
     );
   }, [currentTrack, queue]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    audio.volume = volume;
+    audio.muted = isMuted;
+
+    window.localStorage.setItem(
+      "moodtune-volume",
+      volume.toString()
+    );
+
+    window.localStorage.setItem(
+      "moodtune-muted",
+      isMuted.toString()
+    );
+  }, [isMuted, volume]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -243,34 +318,35 @@ export default function PlayerProvider({
     selectTrack,
   ]);
 
-  const playPrevious = useCallback(() => {
-    if (
-      queue.length < 2 ||
-      currentIndex < 0
-    ) {
-      return;
-    }
+  const playPrevious =
+    useCallback(() => {
+      if (
+        queue.length < 2 ||
+        currentIndex < 0
+      ) {
+        return;
+      }
 
-    const previousIndex =
-      (
-        currentIndex -
-        1 +
-        queue.length
-      ) % queue.length;
+      const previousIndex =
+        (
+          currentIndex -
+          1 +
+          queue.length
+        ) % queue.length;
 
-    const previousTrack =
-      queue[previousIndex];
+      const previousTrack =
+        queue[previousIndex];
 
-    if (!previousTrack) {
-      return;
-    }
+      if (!previousTrack) {
+        return;
+      }
 
-    selectTrack(previousTrack);
-  }, [
-    currentIndex,
-    queue,
-    selectTrack,
-  ]);
+      selectTrack(previousTrack);
+    }, [
+      currentIndex,
+      queue,
+      selectTrack,
+    ]);
 
   const seek = useCallback(
     (newTime: number) => {
@@ -280,11 +356,62 @@ export default function PlayerProvider({
         return;
       }
 
-      audio.currentTime = newTime;
-      setCurrentTime(newTime);
+      const safeTime = Math.max(
+        0,
+        Math.min(
+          newTime,
+          audio.duration || newTime
+        )
+      );
+
+      audio.currentTime = safeTime;
+      setCurrentTime(safeTime);
     },
     []
   );
+
+  const setVolume = useCallback(
+    (newVolume: number) => {
+      const safeVolume = Math.min(
+        1,
+        Math.max(0, newVolume)
+      );
+
+      setVolumeState(safeVolume);
+
+      if (safeVolume > 0) {
+        lastAudibleVolume.current =
+          safeVolume;
+
+        setIsMuted(false);
+      } else {
+        setIsMuted(true);
+      }
+    },
+    []
+  );
+
+  const toggleMute = useCallback(() => {
+  if (isMuted) {
+    if (volume === 0) {
+      const restoredVolume =
+        lastAudibleVolume.current > 0
+          ? lastAudibleVolume.current
+          : 0.8;
+
+      setVolumeState(restoredVolume);
+    }
+
+    setIsMuted(false);
+    return;
+  }
+
+  if (volume > 0) {
+    lastAudibleVolume.current = volume;
+  }
+
+  setIsMuted(true);
+}, [isMuted, volume]);
 
   const minimizePlayer = useCallback(
     () => {
@@ -372,12 +499,16 @@ export default function PlayerProvider({
         isMinimized,
         currentTime,
         duration,
+        volume,
+        isMuted,
         error,
         loadQueue,
         togglePlay,
         playNext,
         playPrevious,
         seek,
+        setVolume,
+        toggleMute,
         minimizePlayer,
         expandPlayer,
       }),
@@ -391,12 +522,16 @@ export default function PlayerProvider({
         isMinimized,
         currentTime,
         duration,
+        volume,
+        isMuted,
         error,
         loadQueue,
         togglePlay,
         playNext,
         playPrevious,
         seek,
+        setVolume,
+        toggleMute,
         minimizePlayer,
         expandPlayer,
       ]
@@ -416,6 +551,11 @@ export default function PlayerProvider({
       <audio
         ref={(element) => {
           audioRef.current = element;
+
+          if (element) {
+            element.volume = volume;
+            element.muted = isMuted;
+          }
         }}
         {...audioSourceProperties}
         preload="metadata"
@@ -423,6 +563,12 @@ export default function PlayerProvider({
           setDuration(
             event.currentTarget.duration
           );
+
+          event.currentTarget.volume =
+            volume;
+
+          event.currentTarget.muted =
+            isMuted;
         }}
         onTimeUpdate={(event) => {
           setCurrentTime(
@@ -431,6 +577,7 @@ export default function PlayerProvider({
         }}
         onPlay={() => {
           setIsPlaying(true);
+
           void recordListeningHistory();
         }}
         onPause={() => {

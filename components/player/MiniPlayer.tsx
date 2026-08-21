@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { ChangeEvent } from "react";
 
 import useFavourite from "@/components/favourites/useFavourite";
 import { usePlayer } from "@/components/player/PlayerProvider";
@@ -16,9 +17,13 @@ export default function MiniPlayer() {
     emotion,
     isPlaying,
     isMinimized,
+    volume,
+    isMuted,
     togglePlay,
     playPrevious,
     playNext,
+    setVolume,
+    toggleMute,
     expandPlayer,
   } = usePlayer();
 
@@ -33,6 +38,14 @@ export default function MiniPlayer() {
   }
 
   const track = currentTrack;
+  const volumePercentage = Math.round(volume * 100);
+
+  const volumeIcon =
+    isMuted || volume === 0
+      ? "🔇"
+      : volume < 0.5
+        ? "🔉"
+        : "🔊";
 
   function handleExpand() {
     expandPlayer();
@@ -49,9 +62,13 @@ export default function MiniPlayer() {
       parameters.set("emotion", emotion);
     }
 
-    router.push(
-      `/player?${parameters.toString()}`
-    );
+    router.push(`/player?${parameters.toString()}`);
+  }
+
+  function handleVolumeChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    setVolume(Number(event.target.value));
   }
 
   return (
@@ -80,15 +97,55 @@ export default function MiniPlayer() {
         )}
 
         <span className="mini-player-details">
-          <strong>
-            {track.title}
-          </strong>
-
-          <span>
-            {track.artist}
-          </span>
+          <strong>{track.title}</strong>
+          <span>{track.artist}</span>
         </span>
       </button>
+
+      <div
+        className="mini-player-volume"
+        aria-label="Volume controls"
+      >
+        <button
+          type="button"
+          className="mini-player-mute-button"
+          onClick={toggleMute}
+          aria-label={
+            isMuted
+              ? "Unmute audio"
+              : "Mute audio"
+          }
+          aria-pressed={isMuted}
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          <span aria-hidden="true">
+            {volumeIcon}
+          </span>
+        </button>
+
+        <label
+          htmlFor="mini-player-volume-slider"
+          className="sr-only"
+        >
+          Player volume
+        </label>
+
+        <input
+          id="mini-player-volume-slider"
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={volume}
+          onChange={handleVolumeChange}
+          aria-label="Mini-player volume"
+          aria-valuetext={
+            isMuted
+              ? "Muted"
+              : `${volumePercentage} percent`
+          }
+        />
+      </div>
 
       <div className="mini-player-controls">
         <button
@@ -98,7 +155,9 @@ export default function MiniPlayer() {
               ? "mini-player-favourite-button favourite-active"
               : "mini-player-favourite-button"
           }
-          onClick={toggleFavourite}
+          onClick={() => {
+            void toggleFavourite();
+          }}
           disabled={updatingFavourite}
           aria-label={
             isFavourite
@@ -131,7 +190,9 @@ export default function MiniPlayer() {
         <button
           type="button"
           className="mini-player-main-button"
-          onClick={togglePlay}
+          onClick={() => {
+            void togglePlay();
+          }}
           aria-label={
             isPlaying ? "Pause" : "Play"
           }

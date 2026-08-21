@@ -3192,3 +3192,126 @@ a {
   border: 0;
 }
 
+/* ==================================================
+   SYNCHRONIZED PLAYER VOLUME CONTROLS
+   ================================================== */
+
+.player-volume-control {
+  width: min(100%, 520px);
+  margin: 4px auto 22px;
+
+  display: grid;
+  grid-template-columns:
+    auto
+    auto
+    minmax(120px, 1fr)
+    58px;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-volume-control label,
+.player-volume-control output {
+  color: #c8bdd5;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.player-volume-control output {
+  text-align: right;
+}
+
+.player-mute-button,
+.mini-player-mute-button {
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(216, 92, 255, 0.35);
+  border-radius: 999px;
+
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.025);
+
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.player-mute-button {
+  width: 44px;
+  height: 44px;
+}
+
+.player-mute-button:hover,
+.mini-player-mute-button:hover {
+  border-color: #ff42cb;
+  background: rgba(255, 66, 203, 0.1);
+  transform: translateY(-1px);
+}
+
+.player-mute-button:focus-visible,
+.mini-player-mute-button:focus-visible,
+.player-volume-control input:focus-visible,
+.mini-player-volume input:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 3px;
+}
+
+.player-volume-control input,
+.mini-player-volume input {
+  accent-color: #d92bc4;
+  cursor: pointer;
+}
+
+.mini-player-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-player-mute-button {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+}
+
+.mini-player-volume input {
+  width: 82px;
+}
+
+@media (max-width: 900px) {
+  .mini-player-volume input {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .player-volume-control {
+    grid-template-columns:
+      auto
+      minmax(100px, 1fr)
+      52px;
+  }
+
+  .player-volume-control label {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+
+    border: 0;
+  }
+
+  .mini-player-volume {
+    display: none;
+  }
+}
+
