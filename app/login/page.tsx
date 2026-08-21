@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import {
+  type FormEvent,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
 import MoodTuneLogo from "@/components/ui/MoodTuneLogo";
@@ -12,25 +18,43 @@ export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] =
+    useState("");
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] =
+    useState("");
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+  const [loading, setLoading] =
+    useState(false);
+
+  const [resetLoading, setResetLoading] =
+    useState(false);
+
+  async function handleLogin(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     setError("");
+    setResetMessage("");
 
-    if (!email.trim()) {
-      setError("Please enter your email address.");
+    const cleanedEmail = email.trim();
+
+    if (!cleanedEmail) {
+      setError(
+        "Please enter your email address."
+      );
       return;
     }
 
     if (!password) {
-      setError("Please enter your password.");
+      setError(
+        "Please enter your password."
+      );
       return;
     }
 
@@ -39,41 +63,147 @@ export default function LoginPage() {
 
       await signInWithEmailAndPassword(
         auth,
-        email,
+        cleanedEmail,
         password
       );
 
       router.push("/profile");
-    } catch (error: unknown) {
-      console.error("Login error:", error);
+    } catch (loginError: unknown) {
+      console.error(
+        "Login error:",
+        loginError
+      );
 
       if (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error
+        typeof loginError === "object" &&
+        loginError !== null &&
+        "code" in loginError
       ) {
-        const firebaseError = error as { code: string };
+        const firebaseError =
+          loginError as {
+            code: string;
+          };
 
         if (
-          firebaseError.code === "auth/invalid-credential" ||
-          firebaseError.code === "auth/wrong-password" ||
-          firebaseError.code === "auth/user-not-found"
+          firebaseError.code ===
+            "auth/invalid-credential" ||
+          firebaseError.code ===
+            "auth/wrong-password" ||
+          firebaseError.code ===
+            "auth/user-not-found"
         ) {
-          setError("Incorrect email or password.");
-        } else if (firebaseError.code === "auth/invalid-email") {
-          setError("Please enter a valid email address.");
-        } else if (firebaseError.code === "auth/too-many-requests") {
+          setError(
+            "Incorrect email or password."
+          );
+        } else if (
+          firebaseError.code ===
+          "auth/invalid-email"
+        ) {
+          setError(
+            "Please enter a valid email address."
+          );
+        } else if (
+          firebaseError.code ===
+          "auth/too-many-requests"
+        ) {
           setError(
             "Too many login attempts. Please wait a moment and try again."
           );
+        } else if (
+          firebaseError.code ===
+          "auth/network-request-failed"
+        ) {
+          setError(
+            "Please check your internet connection and try again."
+          );
         } else {
-          setError("We couldn't sign you in. Please try again.");
+          setError(
+            "We couldn't sign you in. Please try again."
+          );
         }
       } else {
-        setError("We couldn't sign you in. Please try again.");
+        setError(
+          "We couldn't sign you in. Please try again."
+        );
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handlePasswordReset() {
+    setError("");
+    setResetMessage("");
+
+    const cleanedEmail = email.trim();
+
+    if (!cleanedEmail) {
+      setError(
+        "Enter your email address above, then select Forgot password."
+      );
+      return;
+    }
+
+    try {
+      setResetLoading(true);
+
+      await sendPasswordResetEmail(
+        auth,
+        cleanedEmail
+      );
+
+      setResetMessage(
+        "Password reset email sent. Check your inbox and spam folder."
+      );
+    } catch (resetError: unknown) {
+      console.error(
+        "Password reset error:",
+        resetError
+      );
+
+      if (
+        typeof resetError === "object" &&
+        resetError !== null &&
+        "code" in resetError
+      ) {
+        const firebaseError =
+          resetError as {
+            code: string;
+          };
+
+        if (
+          firebaseError.code ===
+          "auth/invalid-email"
+        ) {
+          setError(
+            "Please enter a valid email address."
+          );
+        } else if (
+          firebaseError.code ===
+          "auth/too-many-requests"
+        ) {
+          setError(
+            "Too many reset requests. Please wait a moment and try again."
+          );
+        } else if (
+          firebaseError.code ===
+          "auth/network-request-failed"
+        ) {
+          setError(
+            "Please check your internet connection and try again."
+          );
+        } else {
+          setError(
+            "We couldn't send the password reset email. Please try again."
+          );
+        }
+      } else {
+        setError(
+          "We couldn't send the password reset email. Please try again."
+        );
+      }
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -86,7 +216,9 @@ export default function LoginPage() {
           Mood<span>Tune</span>
         </div>
 
-        <p>Every emotion has a soundtrack.</p>
+        <p>
+          Every emotion has a soundtrack.
+        </p>
       </div>
 
       <section className="auth-card">
@@ -102,7 +234,8 @@ export default function LoginPage() {
           </h1>
 
           <p className="auth-description">
-            Continue your emotion-aware music journey.
+            Continue your emotion-aware
+            music journey.
           </p>
         </div>
 
@@ -116,7 +249,10 @@ export default function LoginPage() {
             </label>
 
             <div className="auth-input-wrap">
-              <span className="auth-input-icon">
+              <span
+                className="auth-input-icon"
+                aria-hidden="true"
+              >
                 ✉
               </span>
 
@@ -127,9 +263,19 @@ export default function LoginPage() {
                 placeholder="Enter your email"
                 autoComplete="email"
                 value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
+                onChange={(event) => {
+                  setEmail(
+                    event.target.value
+                  );
+
+                  if (error) {
+                    setError("");
+                  }
+
+                  if (resetMessage) {
+                    setResetMessage("");
+                  }
+                }}
               />
             </div>
           </div>
@@ -140,27 +286,42 @@ export default function LoginPage() {
             </label>
 
             <div className="auth-input-wrap">
-              <span className="auth-input-icon">
+              <span
+                className="auth-input-icon"
+                aria-hidden="true"
+              >
                 ♢
               </span>
 
               <input
                 id="password"
                 name="password"
-                type={showPassword ? "text" : "password"}
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 value={password}
-                onChange={(event) =>
-                  setPassword(event.target.value)
-                }
+                onChange={(event) => {
+                  setPassword(
+                    event.target.value
+                  );
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
               />
 
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() =>
-                  setShowPassword((current) => !current)
+                  setShowPassword(
+                    (current) => !current
+                  )
                 }
                 aria-label={
                   showPassword
@@ -176,19 +337,29 @@ export default function LoginPage() {
           <div className="auth-options">
             <label className="remember-option">
               <input type="checkbox" />
+
               <span>Remember me</span>
             </label>
 
             <button
               type="button"
               className="forgot-link"
+              onClick={() => {
+                void handlePasswordReset();
+              }}
+              disabled={
+                resetLoading || loading
+              }
             >
-              Forgot password?
+              {resetLoading
+                ? "Sending..."
+                : "Forgot password?"}
             </button>
           </div>
 
-          {error && (
+          {error ? (
             <p
+              role="alert"
               style={{
                 margin: 0,
                 color: "#ff72c8",
@@ -198,18 +369,42 @@ export default function LoginPage() {
             >
               {error}
             </p>
-          )}
+          ) : null}
+
+          {resetMessage ? (
+            <p
+              role="status"
+              style={{
+                margin: 0,
+                padding: "10px 12px",
+                border:
+                  "1px solid rgba(160, 255, 196, 0.32)",
+                borderRadius: "12px",
+                color: "#a0ffc4",
+                background:
+                  "rgba(77, 205, 130, 0.08)",
+                fontSize: "0.8rem",
+                lineHeight: 1.5,
+              }}
+            >
+              {resetMessage}
+            </p>
+          ) : null}
 
           <button
             className="auth-button"
             type="submit"
-            disabled={loading}
+            disabled={
+              loading || resetLoading
+            }
           >
             <span>
-              {loading ? "Signing in..." : "Sign in"}
+              {loading
+                ? "Signing in..."
+                : "Sign in"}
             </span>
 
-            {!loading && <span>→</span>}
+            {!loading ? <span>→</span> : null}
           </button>
         </form>
 
