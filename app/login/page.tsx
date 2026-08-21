@@ -7,7 +7,10 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 
@@ -17,14 +20,21 @@ import MoodTuneLogo from "@/components/ui/MoodTuneLogo";
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] =
+    useState("");
+
   const [password, setPassword] =
     useState("");
 
   const [showPassword, setShowPassword] =
     useState(false);
 
-  const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
   const [resetMessage, setResetMessage] =
     useState("");
 
@@ -60,6 +70,13 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
+
+      await setPersistence(
+        auth,
+        rememberMe
+          ? browserLocalPersistence
+          : browserSessionPersistence
+      );
 
       await signInWithEmailAndPassword(
         auth,
@@ -336,7 +353,15 @@ export default function LoginPage() {
 
           <div className="auth-options">
             <label className="remember-option">
-              <input type="checkbox" />
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) =>
+                  setRememberMe(
+                    event.target.checked
+                  )
+                }
+              />
 
               <span>Remember me</span>
             </label>
@@ -404,7 +429,9 @@ export default function LoginPage() {
                 : "Sign in"}
             </span>
 
-            {!loading ? <span>→</span> : null}
+            {!loading ? (
+              <span>→</span>
+            ) : null}
           </button>
         </form>
 
