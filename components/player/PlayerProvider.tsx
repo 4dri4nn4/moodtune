@@ -34,6 +34,8 @@ type JourneyContext = {
   emotion: string;
 };
 
+export type RepeatMode = "off" | "all" | "one";
+
 type PlayerContextValue = {
   queue: Track[];
   currentTrack: Track | null;
@@ -46,6 +48,8 @@ type PlayerContextValue = {
   duration: number;
   volume: number;
   isMuted: boolean;
+  isShuffle: boolean;
+  repeatMode: RepeatMode;
   error: string;
 
   loadQueue: (
@@ -60,6 +64,8 @@ type PlayerContextValue = {
   seek: (newTime: number) => void;
   setVolume: (newVolume: number) => void;
   toggleMute: () => void;
+  toggleShuffle: () => void;
+  cycleRepeatMode: () => void;
   minimizePlayer: () => void;
   expandPlayer: () => void;
 };
@@ -106,6 +112,71 @@ function getSavedMutedState() {
   );
 }
 
+function getSavedShuffleState() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.localStorage.getItem(
+      "moodtune-shuffle"
+    ) === "true"
+  );
+}
+
+function getSavedRepeatMode(): RepeatMode {
+  if (typeof window === "undefined") {
+    return "off";
+  }
+
+  const savedMode =
+    window.localStorage.getItem(
+      "moodtune-repeat-mode"
+    );
+
+  return savedMode === "all" ||
+    savedMode === "one"
+    ? savedMode
+    : "off";
+}
+
+function createShuffledQueue(
+  tracks: Track[],
+  selectedTrackId: string
+) {
+  const selectedTrack = tracks.find(
+    (track) => track.id === selectedTrackId
+  );
+
+  if (!selectedTrack) {
+    return tracks;
+  }
+
+  const remainingTracks = tracks.filter(
+    (track) => track.id !== selectedTrackId
+  );
+
+  for (
+    let index = remainingTracks.length - 1;
+    index > 0;
+    index -= 1
+  ) {
+    const randomIndex = Math.floor(
+      Math.random() * (index + 1)
+    );
+
+    [
+      remainingTracks[index],
+      remainingTracks[randomIndex],
+    ] = [
+      remainingTracks[randomIndex],
+      remainingTracks[index],
+    ];
+  }
+
+  return [selectedTrack, ...remainingTracks];
+}
+
 export default function PlayerProvider({
   children,
 }: {
@@ -119,6 +190,9 @@ export default function PlayerProvider({
 
   const lastAudibleVolume =
     useRef(0.8);
+
+  const originalQueueRef =
+    useRef<Track[]>([]);
 
   const [queue, setQueue] =
     useState<Track[]>([]);
@@ -149,6 +223,12 @@ export default function PlayerProvider({
 
   const [isMuted, setIsMuted] =
     useState(getSavedMutedState);
+
+  const [isShuffle, setIsShuffle] =
+    useState(getSavedShuffleState);
+
+  const [repeatMode, setRepeatMode] =
+    useState<RepeatMode>(getSavedRepeatMode);
 
   const [error, setError] =
     useState("");
@@ -186,6 +266,18 @@ export default function PlayerProvider({
   }, [isMuted, volume]);
 
   useEffect(() => {
+    window.localStorage.setItem(
+      "moodtune-shuffle",
+      isShuffle.toString()
+    );
+
+    window.localStorage.setItem(
+      "moodtune-repeat-mode",
+      repeatMode
+    );
+  }, [isShuffle, repeatMode]);
+
+  useEffect(() => {
     const audio = audioRef.current;
 
     if (!audio || !currentTrack) {
@@ -198,19 +290,26 @@ export default function PlayerProvider({
     }
 
     audio
-      .play()
-      .catch((playbackError) => {
-        console.error(
-          "Audio playback error:",
-          playbackError
-        );
+  .play()
+  .catch((playbackError: unknown) => {
+    if (
+      playbackError instanceof DOMException &&
+      playbackError.name === "AbortError"
+    ) {
+      return;
+    }
 
-        setError(
-          "We couldn't play this audio file."
-        );
+    console.error(
+      "Audio playback error:",
+      playbackError
+    );
 
-        setIsPlaying(false);
-      });
+    setError(
+      "We couldn't play this audio file."
+    );
+
+    setIsPlaying(false);
+  });
   }, [currentTrack, isPlaying]);
 
   const loadQueue = useCallback(
@@ -232,7 +331,16 @@ export default function PlayerProvider({
         return;
       }
 
-      setQueue(tracks);
+      originalQueueRef.current = tracks;
+
+      setQueue(
+        isShuffle
+          ? createShuffledQueue(
+              tracks,
+              selectedTrackId
+            )
+          : tracks
+      );
       setJourney(
         context?.journey ?? ""
       );
@@ -248,7 +356,7 @@ export default function PlayerProvider({
       );
       setCurrentTrack(selectedTrack);
     },
-    []
+    [isShuffle]
   );
 
   const togglePlay =
@@ -392,26 +500,108 @@ export default function PlayerProvider({
   );
 
   const toggleMute = useCallback(() => {
-  if (isMuted) {
-    if (volume === 0) {
-      const restoredVolume =
-        lastAudibleVolume.current > 0
-          ? lastAudibleVolume.current
-          : 0.8;
+    if (isMuted) {
+      if (volume === 0) {
+        const restoredVolume =
+          lastAudibleVolume.current > 0
+            ? lastAudibleVolume.current
+            : 0.8;
 
-      setVolumeState(restoredVolume);
+        setVolumeState(restoredVolume);
+      }
+
+      setIsMuted(false);
+      return;
     }
 
-    setIsMuted(false);
-    return;
-  }
+    if (volume > 0) {
+      lastAudibleVolume.current = volume;
+    }
 
-  if (volume > 0) {
-    lastAudibleVolume.current = volume;
-  }
+    setIsMuted(true);
+  }, [isMuted, volume]);
 
-  setIsMuted(true);
-}, [isMuted, volume]);
+  const toggleShuffle = useCallback(() => {
+    const nextShuffleState = !isShuffle;
+
+    if (currentTrack) {
+      setQueue(
+        nextShuffleState
+          ? createShuffledQueue(
+              originalQueueRef.current,
+              currentTrack.id
+            )
+          : originalQueueRef.current
+      );
+    }
+
+    setIsShuffle(nextShuffleState);
+  }, [currentTrack, isShuffle]);
+
+  const cycleRepeatMode = useCallback(() => {
+    setRepeatMode((current) => {
+      if (current === "off") {
+        return "all";
+      }
+
+      if (current === "all") {
+        return "one";
+      }
+
+      return "off";
+    });
+  }, []);
+
+  const handleEnded = useCallback(() => {
+    const audio = audioRef.current;
+
+    if (
+      (repeatMode === "one" ||
+        (repeatMode === "all" &&
+          queue.length === 1)) &&
+      audio
+    ) {
+      audio.currentTime = 0;
+      setCurrentTime(0);
+
+      audio.play().catch((playbackError) => {
+        console.error(
+          "Audio playback error:",
+          playbackError
+        );
+
+        setError(
+          "We couldn't replay this audio file."
+        );
+        setIsPlaying(false);
+      });
+
+      return;
+    }
+
+    const isLastTrack =
+      currentIndex === queue.length - 1;
+
+    if (
+      queue.length > 1 &&
+      (isShuffle ||
+        repeatMode === "all" ||
+        !isLastTrack)
+    ) {
+      playNext();
+      return;
+    }
+
+    setIsPlaying(false);
+    setCurrentTime(duration);
+  }, [
+    currentIndex,
+    duration,
+    isShuffle,
+    playNext,
+    queue.length,
+    repeatMode,
+  ]);
 
   const minimizePlayer = useCallback(
     () => {
@@ -501,6 +691,8 @@ export default function PlayerProvider({
         duration,
         volume,
         isMuted,
+        isShuffle,
+        repeatMode,
         error,
         loadQueue,
         togglePlay,
@@ -509,6 +701,8 @@ export default function PlayerProvider({
         seek,
         setVolume,
         toggleMute,
+        toggleShuffle,
+        cycleRepeatMode,
         minimizePlayer,
         expandPlayer,
       }),
@@ -524,6 +718,8 @@ export default function PlayerProvider({
         duration,
         volume,
         isMuted,
+        isShuffle,
+        repeatMode,
         error,
         loadQueue,
         togglePlay,
@@ -532,6 +728,8 @@ export default function PlayerProvider({
         seek,
         setVolume,
         toggleMute,
+        toggleShuffle,
+        cycleRepeatMode,
         minimizePlayer,
         expandPlayer,
       ]
@@ -583,7 +781,7 @@ export default function PlayerProvider({
         onPause={() => {
           setIsPlaying(false);
         }}
-        onEnded={playNext}
+        onEnded={handleEnded}
       />
     </PlayerContext.Provider>
   );

@@ -19,11 +19,15 @@ export default function MiniPlayer() {
     isMinimized,
     volume,
     isMuted,
+    isShuffle,
+    repeatMode,
     togglePlay,
     playPrevious,
     playNext,
     setVolume,
     toggleMute,
+    toggleShuffle,
+    cycleRepeatMode,
     expandPlayer,
   } = usePlayer();
 
@@ -148,6 +152,57 @@ export default function MiniPlayer() {
       </div>
 
       <div className="mini-player-controls">
+        <button
+          type="button"
+          className={
+            isShuffle
+              ? "mini-player-mode-button mode-active"
+              : "mini-player-mode-button"
+          }
+          onClick={toggleShuffle}
+          aria-label={
+            isShuffle
+              ? "Turn shuffle off"
+              : "Turn shuffle on"
+          }
+          aria-pressed={isShuffle}
+          title={
+            isShuffle
+              ? "Shuffle on"
+              : "Shuffle off"
+          }
+        >
+          ⇄
+        </button>
+
+        <button
+          type="button"
+          className={
+            repeatMode !== "off"
+              ? "mini-player-mode-button mode-active"
+              : "mini-player-mode-button"
+          }
+          onClick={cycleRepeatMode}
+          aria-label={
+            repeatMode === "off"
+              ? "Repeat is off. Select to repeat the queue"
+              : repeatMode === "all"
+                ? "Repeating the queue. Select to repeat one track"
+                : "Repeating one track. Select to turn repeat off"
+          }
+          title={
+            repeatMode === "off"
+              ? "Repeat off"
+              : repeatMode === "all"
+                ? "Repeat queue"
+                : "Repeat track"
+          }
+        >
+          {repeatMode === "one"
+            ? "↻¹"
+            : "↻"}
+        </button>
+
         <button
           type="button"
           className={

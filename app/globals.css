@@ -3315,3 +3315,118 @@ a {
   }
 }
 
+/* ==================================================
+   SHUFFLE AND REPEAT CONTROLS
+   ================================================== */
+
+.player-playback-modes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: -4px auto 18px;
+}
+
+.player-mode-button {
+  min-height: 40px;
+  padding: 8px 14px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: 1px solid rgba(216, 92, 255, 0.35);
+  border-radius: 999px;
+
+  color: #d9cde3;
+  background: rgba(255, 255, 255, 0.025);
+
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.player-mode-button:hover,
+.mini-player-mode-button:hover:not(:disabled) {
+  border-color: #ff42cb;
+  background: rgba(255, 66, 203, 0.1);
+  transform: translateY(-1px);
+}
+
+.player-mode-button.mode-active,
+.mini-player-mode-button.mode-active {
+  border-color: #ff69c7;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      110deg,
+      rgba(118, 39, 199, 0.62),
+      rgba(237, 56, 187, 0.62)
+    );
+
+  box-shadow:
+    0 0 16px rgba(255, 72, 170, 0.2);
+}
+
+.player-mode-button:focus-visible,
+.mini-player-mode-button:focus-visible {
+  outline: 2px solid #ff42cb;
+  outline-offset: 3px;
+}
+
+.mini-player {
+  width: min(720px, calc(100% - 48px));
+  grid-template-columns:
+    minmax(150px, 1fr)
+    auto
+    auto;
+}
+
+.mini-player-controls .mini-player-mode-button {
+  color: #d9b9f0;
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .mini-player {
+    width: min(610px, calc(100% - 48px));
+  }
+}
+
+@media (max-width: 700px) {
+  .mini-player {
+    width: calc(100% - 24px);
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .mini-player-controls {
+    gap: 6px;
+  }
+
+  .mini-player-controls button,
+  .mini-player-controls .mini-player-mode-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .mini-player-controls .mini-player-main-button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .player-mode-button {
+    flex: 1 1 140px;
+  }
+}

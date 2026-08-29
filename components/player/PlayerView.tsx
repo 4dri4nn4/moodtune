@@ -49,6 +49,8 @@ export default function PlayerView({
     duration,
     volume,
     isMuted,
+    isShuffle,
+    repeatMode,
     error: playerError,
     loadQueue,
     togglePlay,
@@ -57,6 +59,8 @@ export default function PlayerView({
     seek,
     setVolume,
     toggleMute,
+    toggleShuffle,
+    cycleRepeatMode,
     minimizePlayer,
   } = usePlayer();
 
@@ -436,6 +440,7 @@ export default function PlayerView({
               <p>
                 Listen, move through the
                 playlist, save favourites,
+                shuffle or repeat tracks,
                 adjust the volume, or
                 minimize the player while
                 browsing.
@@ -595,6 +600,74 @@ export default function PlayerView({
                   ? "Muted"
                   : `${volumePercentage}%`}
               </output>
+            </div>
+
+            <div
+              className="player-playback-modes"
+              aria-label="Playback modes"
+            >
+              <button
+                type="button"
+                className={
+                  isShuffle
+                    ? "player-mode-button mode-active"
+                    : "player-mode-button"
+                }
+                onClick={toggleShuffle}
+                aria-label={
+                  isShuffle
+                    ? "Turn shuffle off"
+                    : "Turn shuffle on"
+                }
+                aria-pressed={isShuffle}
+                title={
+                  isShuffle
+                    ? "Shuffle on"
+                    : "Shuffle off"
+                }
+              >
+                <span aria-hidden="true">
+                  ⇄
+                </span>
+                <span>Shuffle</span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  repeatMode !== "off"
+                    ? "player-mode-button mode-active"
+                    : "player-mode-button"
+                }
+                onClick={cycleRepeatMode}
+                aria-label={
+                  repeatMode === "off"
+                    ? "Repeat is off. Select to repeat the queue"
+                    : repeatMode === "all"
+                      ? "Repeating the queue. Select to repeat one track"
+                      : "Repeating one track. Select to turn repeat off"
+                }
+                title={
+                  repeatMode === "off"
+                    ? "Repeat off"
+                    : repeatMode === "all"
+                      ? "Repeat queue"
+                      : "Repeat track"
+                }
+              >
+                <span aria-hidden="true">
+                  {repeatMode === "one"
+                    ? "↻¹"
+                    : "↻"}
+                </span>
+                <span>
+                  {repeatMode === "off"
+                    ? "Repeat off"
+                    : repeatMode === "all"
+                      ? "Repeat all"
+                      : "Repeat one"}
+                </span>
+              </button>
             </div>
 
             <div className="player-controls">
