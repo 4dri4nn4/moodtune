@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
+import MoodTuneLogo from "@/components/ui/MoodTuneLogo";
 
 export default function Home() {
   const router = useRouter();
@@ -61,7 +62,11 @@ export default function Home() {
           className="brand"
           aria-label="MoodTune home"
         >
-          MoodTune
+          <MoodTuneLogo size={42} />
+
+          <span className="home-brand-name">
+            Mood<span>Tune</span>
+          </span>
         </Link>
 
         <nav
@@ -167,26 +172,39 @@ export default function Home() {
       )}
 
       <section className="hero">
-        <p className="eyebrow">
-          Emotion-aware music streaming
-        </p>
+        <div className="home-hero-glow" aria-hidden="true" />
 
-        <h1>
-          Every emotion has a soundtrack.
-        </h1>
+        <div className="home-hero-intro">
+          <p className="eyebrow">
+            Emotion-aware music streaming
+          </p>
 
-        <p className="hero-description">
-          Discover and play music based on how you feel
-          now, or how you want to feel next.
-        </p>
+          <h1>
+            Every emotion has a
+            <span> soundtrack.</span>
+          </h1>
+
+          <p className="hero-description">
+            Discover music that meets you where you are—or
+            helps you move toward how you want to feel.
+          </p>
+        </div>
+
+        <div className="home-journey-heading">
+          <span>Choose your journey</span>
+          <span aria-hidden="true">↓</span>
+        </div>
 
         <div className="journey-grid">
           <Link
             href="/browse?journey=feel"
             className="journey-card"
           >
-            <span className="journey-label">
-              Current mood
+            <span className="journey-card-topline">
+              <span className="journey-number">01</span>
+              <span className="journey-label">
+                Current mood
+              </span>
             </span>
 
             <strong>
@@ -196,14 +214,21 @@ export default function Home() {
             <span>
               Choose music that reflects your emotions.
             </span>
+
+            <span className="journey-arrow" aria-hidden="true">
+              →
+            </span>
           </Link>
 
           <Link
             href="/browse?journey=want"
             className="journey-card"
           >
-            <span className="journey-label">
-              Desired mood
+            <span className="journey-card-topline">
+              <span className="journey-number">02</span>
+              <span className="journey-label">
+                Desired mood
+              </span>
             </span>
 
             <strong>
@@ -213,6 +238,10 @@ export default function Home() {
             <span>
               Choose music that helps guide your mood.
             </span>
+
+            <span className="journey-arrow" aria-hidden="true">
+              →
+            </span>
           </Link>
         </div>
 
@@ -221,7 +250,7 @@ export default function Home() {
             href="/browse?journey=feel"
             className="button"
           >
-            Browse music
+            Browse music <span aria-hidden="true">→</span>
           </Link>
 
           {authReady && user ? (
@@ -252,7 +281,7 @@ export default function Home() {
           </p>
 
           <h2 id="features-title">
-            Music discovery that begins with emotion
+            A listening experience built around you
           </h2>
         </div>
 
@@ -293,16 +322,23 @@ export default function Home() {
             </span>
           </Link>
 
-          <article className="feature-card">
-            <h3>
-              Built-in playback
-            </h3>
+          <Link
+  href="/browse?journey=feel"
+  className="feature-card feature-card-link"
+>
+  <h3>
+    Built-in playback
+  </h3>
 
-            <p>
-              Listen directly inside MoodTune using
-              the integrated music player.
-            </p>
-          </article>
+  <p>
+    Listen directly inside MoodTune using
+    the integrated music player.
+  </p>
+
+  <span className="feature-card-action">
+    Choose a track →
+  </span>
+</Link>
         </div>
       </section>
     </main>
