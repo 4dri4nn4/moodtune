@@ -82,6 +82,20 @@ export default function Home() {
             Library
           </Link>
 
+          <Link
+            href="/settings"
+            className="nav-link"
+          >
+            Settings
+          </Link>
+
+          <Link
+            href="/help"
+            className="nav-link"
+          >
+            Help
+          </Link>
+
           {authReady && user && (
             <>
               <span
