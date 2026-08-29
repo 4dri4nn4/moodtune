@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoodTune
 
-## Getting Started
+**Every emotion has a soundtrack.**
 
-First, run the development server:
+MoodTune is an emotion-aware music streaming web application. It helps listeners discover and play music based on either their current emotion or the emotion they would like to move towards.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Unlike a redirect-based recommendation service, MoodTune includes its own catalogue and built-in audio player, allowing the complete listening journey to remain inside the application.
+
+## Core journeys
+
+- **I feel…** — discover music that reflects a current emotion.
+- **I want to feel…** — discover music intended to support movement towards a desired emotion.
+
+Tracks are matched using emotion tags stored in the MoodTune catalogue.
+
+## Implemented features
+
+- Emotion selection across six categories: happy, calm, sad, energetic, anxious and reflective
+- Emotion-matched track recommendations
+- Built-in full music player and persistent mini-player
+- Play, pause, seek, previous and next controls
+- Synchronized volume and mute controls
+- Shuffle, repeat queue and repeat current track modes
+- Persistent browser playback preferences
+- Firebase email/password registration and authentication
+- Password reset and configurable login persistence
+- Editable user profile
+- Favourites
+- Personal playlist creation, renaming and deletion
+- Listening history
+- Functional playback Settings page
+- Help, FAQs and wellbeing guidance
+- Responsive desktop and mobile layouts
+- Accessible labels, focus states and status/error feedback
+
+## Technology stack
+
+- [Next.js](https://nextjs.org/) 16 with the App Router
+- [React](https://react.dev/) 19
+- TypeScript
+- Firebase Authentication
+- Cloud Firestore
+- HTML5 Audio
+- CSS with responsive media queries
+
+## Application structure
+
+```text
+app/
+  browse/       Emotion and journey selection
+  help/         Help, FAQs and guidance
+  library/      Favourites, history and playlists
+  login/        Authentication and password reset
+  player/       Full player route
+  profile/      User account profile
+  register/     Account creation
+  results/      Emotion-matched recommendations
+  settings/     Playback preferences
+
+components/
+  emotion/      Emotion selection interface
+  favourites/   Favourite state management
+  navigation/   Shared navigation controls
+  player/       Player provider, full view and mini-player
+  playlists/    Playlist controls
+  results/      Recommendation results
+  ui/           Shared visual components
+
+lib/
+  firebase.ts   Firebase initialization
+
+public/
+  audio/        Demonstration audio catalogue
+  images/       Track cover artwork
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Firebase data
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+MoodTune uses Firebase Authentication for user accounts and Cloud Firestore for application data. The implemented structure includes:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```text
+tracks
+users/{userId}
+users/{userId}/favourites
+users/{userId}/listeningHistory
+users/{userId}/playlists
+users/{userId}/playlists/{playlistId}/tracks
+```
 
-## Learn More
+Firestore security rules should allow catalogue reads while restricting personal user data to the authenticated account owner.
 
-To learn more about Next.js, take a look at the following resources:
+## Run locally
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Requirements
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Node.js 20 or later
+- npm
+- A configured Firebase project with Email/Password authentication and Cloud Firestore enabled
 
-## Deploy on Vercel
+### Installation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm install
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open [http://localhost:3000](http://localhost:3000) in a browser.
+
+## Quality checks
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Create an optimized production build:
+
+```bash
+npm run build
+```
+
+The application has been tested across its main journeys, authentication flows, Library functions and synchronized player controls.
+
+## Project scope
+
+MoodTune is a university dissertation project focused on emotion-aware music discovery, streaming interaction and user experience evaluation.
+
+It is not a diagnostic, therapeutic or medical application and does not replace professional mental-health or medical support.
