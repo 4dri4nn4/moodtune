@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // The demonstration catalogue is read-only for application users.
+    // Track administration is performed through the Firebase console.
+    match /tracks/{trackId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // A listener may access only their own profile and nested data,
+    // including favourites, listening history and playlists.
+    match /users/{userId} {
+      allow read, create, update, delete: if isOwner(userId);
+
+      match /{document=**} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+    }
+  }
+}

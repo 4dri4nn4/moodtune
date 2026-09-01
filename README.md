@@ -101,6 +101,17 @@ Firestore security rules should allow catalogue reads while restricting personal
 
 ```bash
 npm install
+```
+
+Create the local Firebase configuration before starting the application:
+
+```bash
+cp .env.example .env.local
+```
+
+Replace the placeholder values in `.env.local` with the Firebase web application configuration, then run:
+
+```bash
 npm run dev
 ```
 
@@ -121,6 +132,16 @@ npm run build
 ```
 
 The application has been tested across its main journeys, authentication flows, Library functions and synchronized player controls.
+
+## Firestore security
+
+The repository includes `firestore.rules`. The rules permit authenticated listeners to read the demonstration track catalogue while restricting each user's profile, favourites, history and playlists to that account owner.
+
+Deploy and verify these rules in the Firebase project before usability evaluation or public deployment.
+
+## Demonstration assets
+
+Audio and cover artwork used by the demonstration catalogue are listed in [`docs/ASSET_CREDITS.md`](docs/ASSET_CREDITS.md). Asset provenance and licence evidence must be completed before final dissertation submission or public release.
 
 ## Project scope
 
