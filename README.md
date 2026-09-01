@@ -13,6 +13,12 @@ Unlike a redirect-based recommendation service, MoodTune includes its own catalo
 
 Tracks are matched using emotion tags stored in the MoodTune catalogue.
 
+## Live Application
+
+MoodTune is deployed on Vercel and is available at:
+
+https://moodtune-liart.vercel.app
+
 ## Implemented features
 
 - Emotion selection across six categories: happy, calm, sad, energetic, anxious and reflective
