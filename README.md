@@ -137,7 +137,7 @@ The application has been tested across its main journeys, authentication flows, 
 
 The repository includes `firestore.rules`. The rules permit authenticated listeners to read the demonstration track catalogue while restricting each user's profile, favourites, history and playlists to that account owner.
 
-Deploy and verify these rules in the Firebase project before usability evaluation or public deployment.
+These rules mirror the verified rules currently deployed to the MoodTune Firebase project.
 
 ## Demonstration assets
 

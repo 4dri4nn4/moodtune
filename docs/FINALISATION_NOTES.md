@@ -22,6 +22,6 @@
 
 - Retain the Pixabay licence page and this provenance record with the submission evidence
 - Add the final deployed application URL to the README and dissertation
-- Deploy and verify the repository's Firestore rules
+- Firestore security rules verified against the live Firebase deployment
 - Complete the manual test record on the final deployed version
 - Add ethics approval evidence before participant evaluation
