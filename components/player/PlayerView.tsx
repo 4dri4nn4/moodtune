@@ -90,9 +90,13 @@ export default function PlayerView({
         return;
       }
 
+      // Next/previous updates currentTrack before router.replace updates trackId.
+      // If the requested track is already in the queue, do not refetch the
+      // playlist and temporarily replace the player with its loading state.
       if (
-        currentTrack?.id === trackId &&
-        queue.length > 0
+        queue.some(
+          (track) => track.id === trackId
+        )
       ) {
         setPageError("");
         setLoading(false);
@@ -216,11 +220,10 @@ export default function PlayerView({
       active = false;
     };
   }, [
-    currentTrack?.id,
     emotion,
     journey,
     loadQueue,
-    queue.length,
+    queue,
     trackId,
   ]);
 
